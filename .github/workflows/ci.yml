@@ -35,8 +35,8 @@ jobs:
         run: |
           curl -sSLo build-wrapper.zip https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
           unzip -q build-wrapper.zip
-          sudo cp build-wrapper-linux-x86/* /usr/local/bin/
-          sudo ln -s /usr/local/bin/build-wrapper-linux-x86-64 /usr/local/bin/build-wrapper
+          sudo find build-wrapper-linux-x86 -maxdepth 1 -type f -exec cp {} /usr/local/bin/ \;
+          sudo ln -sf /usr/local/bin/build-wrapper-linux-x86-64 /usr/local/bin/build-wrapper
 
       - name: Build game (via build-wrapper)
         run: build-wrapper --out-dir bw-output make RAYLIB=$PWD/raylib-6.0
