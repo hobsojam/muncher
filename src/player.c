@@ -6,8 +6,15 @@
 #define PLAYER_START_ROW 29
 #define PLAYER_SPEED     8.0f
 
+#define TUNNEL_ROW 14
+
+static int wrap_col(int col) {
+    return (col + MAP_COLS) % MAP_COLS;
+}
+
 static int can_enter(int col, int row) {
-    if (row < 0 || row >= MAP_ROWS || col < 0 || col >= MAP_COLS) return 0;
+    if (row < 0 || row >= MAP_ROWS) return 0;
+    if (col < 0 || col >= MAP_COLS) return row == TUNNEL_ROW;
     return map[row][col] != TILE_WALL && map[row][col] != TILE_DOOR;
 }
 
@@ -42,6 +49,7 @@ void player_update(Player *p, float dt) {
         p->move_t -= 1.0f;
         p->col += p->dir_col;
         p->row += p->dir_row;
+        p->col = wrap_col(p->col);
 
         if (map[p->row][p->col] == TILE_DOT || map[p->row][p->col] == TILE_POWER) {
             map[p->row][p->col] = TILE_EMPTY;
