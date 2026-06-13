@@ -21,7 +21,12 @@ $(OUT): $(SRC)
 	$(CC) $(SRC) -o $(OUT) $(CFLAGS) $(LDFLAGS)
 
 lint:
-	cppcheck --enable=all --error-exitcode=1 --suppress=missingInclude --suppress=unmatchedSuppression src/
+	cppcheck --enable=all --error-exitcode=1 \
+		--suppress=missingInclude \
+		--suppress=missingIncludeSystem \
+		--suppress=unmatchedSuppression \
+		--suppress=normalCheckLevelMaxBranches \
+		src/
 	flawfinder src/
 
 clean:
