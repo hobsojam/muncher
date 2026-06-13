@@ -12,6 +12,18 @@ libraylib.def
 # SonarCloud build-wrapper output
 bw-output/
 
+# Test binaries and coverage data
+tests/test_map
+tests/test_player
+tests/test_ghost
+tests/test_map.exe
+tests/test_player.exe
+tests/test_ghost.exe
+*.gcno
+*.gcda
+*.gcov
+coverage.lcov
+
 # Editor / OS
 .vscode/
 *.suo

@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            gcc make cppcheck unzip \
+            gcc make cppcheck unzip lcov \
             libgl1-mesa-dev libglu1-mesa-dev \
             libx11-dev libxrandr-dev libxi-dev \
             libxinerama-dev libxcursor-dev \
@@ -40,6 +40,14 @@ jobs:
 
       - name: Build game (via build-wrapper)
         run: build-wrapper --out-dir bw-output make RAYLIB=$PWD/raylib-6.0
+
+      - name: Run tests and collect coverage
+        run: |
+          make test
+          lcov --capture --directory . \
+               --output-file coverage.lcov \
+               --include "$(pwd)/src/*" \
+               --ignore-errors unused
 
       - name: Lint
         run: make lint
