@@ -22,12 +22,17 @@ int main(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
 
+    static int you_win = 0;
+
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
-        player_update(&player, dt);
-        if (player.ate_power) ghosts_frighten(ghosts);
-        ghosts_update(ghosts, &player, dt);
+        if (!you_win) {
+            player_update(&player, dt);
+            if (player.ate_power) ghosts_frighten(ghosts);
+            ghosts_update(ghosts, &player, dt);
+            if (map_dots_remaining() == 0) you_win = 1;
+        }
 
         BeginDrawing();
             ClearBackground(BLACK);
@@ -36,6 +41,8 @@ int main(void) {
             map_draw(0, MAP_OFFSET_Y);
             player_draw(&player, 0, MAP_OFFSET_Y);
             ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
+            if (you_win)
+                DrawText("YOU WIN!", SCREEN_W / 2 - 80, SCREEN_H / 2 - 20, 40, YELLOW);
         EndDrawing();
     }
 

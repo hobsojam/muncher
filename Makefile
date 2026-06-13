@@ -19,7 +19,8 @@ TESTCFLAGS  = -Wall -Isrc -Itests/stubs --coverage
 TEST_MAP    = tests/test_map
 TEST_PLAYER = tests/test_player
 TEST_GHOST  = tests/test_ghost
-TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST)
+TEST_WIN    = tests/test_win
+TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN)
 
 all: $(OUT)
 
@@ -30,6 +31,7 @@ test: $(TEST_BINS)
 	./$(TEST_MAP)
 	./$(TEST_PLAYER)
 	./$(TEST_GHOST)
+	./$(TEST_WIN)
 
 $(TEST_MAP): tests/test_map.c tests/test_framework.h tests/stubs/raylib.h src/map.c src/map.h
 	$(CC) tests/test_map.c -o $(TEST_MAP) $(TESTCFLAGS)
@@ -39,6 +41,9 @@ $(TEST_PLAYER): tests/test_player.c tests/test_framework.h tests/stubs/raylib.h 
 
 $(TEST_GHOST): tests/test_ghost.c tests/test_framework.h tests/stubs/raylib.h src/ghost.c src/ghost.h src/map.c src/map.h src/player.h
 	$(CC) tests/test_ghost.c -o $(TEST_GHOST) $(TESTCFLAGS)
+
+$(TEST_WIN): tests/test_win.c tests/test_framework.h src/map.c src/map.h
+	$(CC) tests/test_win.c -o $(TEST_WIN) $(TESTCFLAGS)
 
 lint:
 	cppcheck --enable=all --error-exitcode=1 \
@@ -51,4 +56,4 @@ lint:
 
 clean:
 	$(RM) $(OUT)
-	$(RM) $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST)
+	$(RM) $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN)

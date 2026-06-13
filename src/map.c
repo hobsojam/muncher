@@ -52,6 +52,15 @@ void map_init(void) {
     }
 }
 
+int map_dots_remaining(void) {
+    int count = 0;
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            if (map[r][c] == TILE_DOT || map[r][c] == TILE_POWER)
+                count++;
+    return count;
+}
+
 void map_draw(int offset_x, int offset_y) {
     static const Color WALL_COLOR = {33, 33, 222, 255};
 
