@@ -22,7 +22,8 @@ jobs:
             gcc make cppcheck unzip \
             libgl1-mesa-dev libglu1-mesa-dev \
             libx11-dev libxrandr-dev libxi-dev \
-            libxinerama-dev libxcursor-dev
+            libxinerama-dev libxcursor-dev \
+            libc6-i386
           pip install flawfinder
 
       - name: Build raylib
