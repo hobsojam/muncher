@@ -1,0 +1,16 @@
+# Build output
+muncher.exe
+libraylib.dll
+
+# Generated import library files
+libraylib.a
+libraylib.def
+
+# cppcheck report
+*.xml
+
+# Editor / OS
+.vscode/
+*.suo
+*.user
+Thumbs.db
