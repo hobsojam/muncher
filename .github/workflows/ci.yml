@@ -12,12 +12,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for SonarCloud blame data
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            gcc make cppcheck \
+            gcc make cppcheck unzip \
             libgl1-mesa-dev libglu1-mesa-dev \
             libx11-dev libxrandr-dev libxi-dev \
             libxinerama-dev libxcursor-dev
@@ -28,8 +30,20 @@ jobs:
           curl -L https://github.com/raysan5/raylib/archive/refs/tags/6.0.tar.gz | tar -xz
           make -C raylib-6.0/src PLATFORM=PLATFORM_DESKTOP
 
-      - name: Build game
-        run: make RAYLIB=$PWD/raylib-6.0
+      - name: Install SonarCloud build-wrapper
+        run: |
+          curl -sSLo build-wrapper.zip https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
+          unzip -q build-wrapper.zip
+          sudo mv build-wrapper-linux-x86/build-wrapper-linux-x86-64 /usr/local/bin/build-wrapper
+
+      - name: Build game (via build-wrapper)
+        run: build-wrapper --out-dir bw-output make RAYLIB=$PWD/raylib-6.0
 
       - name: Lint
         run: make lint
+
+      - name: SonarCloud scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
