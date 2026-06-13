@@ -7,6 +7,7 @@ typedef struct {
     int next_dir_col, next_dir_row;
     float move_t;
     float speed;
+    int score;
 } Player;
 
 void player_init(Player *p);

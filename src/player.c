@@ -27,6 +27,7 @@ void player_init(Player *p) {
     p->next_dir_row = 0;
     p->move_t = 0.0f;
     p->speed = PLAYER_SPEED;
+    p->score = 0;
     map[p->row][p->col] = TILE_EMPTY;
 }
 
@@ -51,8 +52,12 @@ void player_update(Player *p, float dt) {
         p->row += p->dir_row;
         p->col = wrap_col(p->col);
 
-        if (map[p->row][p->col] == TILE_DOT || map[p->row][p->col] == TILE_POWER) {
+        if (map[p->row][p->col] == TILE_DOT) {
             map[p->row][p->col] = TILE_EMPTY;
+            p->score += 1;
+        } else if (map[p->row][p->col] == TILE_POWER) {
+            map[p->row][p->col] = TILE_EMPTY;
+            p->score += 10;
         }
 
         if (can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {

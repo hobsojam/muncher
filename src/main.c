@@ -22,6 +22,7 @@ int main(void) {
         BeginDrawing();
             ClearBackground(BLACK);
             DrawText("MUNCHER", 10, 10, 20, YELLOW);
+            DrawText(TextFormat("SCORE: %d", player.score), 200, 10, 20, WHITE);
             map_draw(0, MAP_OFFSET_Y);
             player_draw(&player, 0, MAP_OFFSET_Y);
         EndDrawing();
