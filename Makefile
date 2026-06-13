@@ -13,7 +13,7 @@ else
     RM      = rm -f
 endif
 
-SRC = src/main.c src/map.c src/player.c
+SRC = src/main.c src/map.c src/player.c src/ghost.c
 
 all: $(OUT)
 
