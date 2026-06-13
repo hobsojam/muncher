@@ -29,7 +29,19 @@ void player_init(Player *p) {
     p->speed = PLAYER_SPEED;
     p->score     = 0;
     p->ate_power = 0;
+    p->lives     = 3;
     map[p->row][p->col] = TILE_EMPTY;
+}
+
+void player_respawn(Player *p) {
+    p->col          = PLAYER_START_COL;
+    p->row          = PLAYER_START_ROW;
+    p->dir_col      = 0;
+    p->dir_row      = 0;
+    p->next_dir_col = 0;
+    p->next_dir_row = 0;
+    p->move_t       = 0.0f;
+    p->ate_power    = 0;
 }
 
 void player_update(Player *p, float dt) {
