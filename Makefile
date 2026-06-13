@@ -13,7 +13,7 @@ else
     RM      = rm -f
 endif
 
-SRC = src/main.c src/map.c src/player.c
+SRC = src/main.c src/map.c src/player.c src/ghost.c
 
 all: $(OUT)
 
@@ -21,7 +21,12 @@ $(OUT): $(SRC)
 	$(CC) $(SRC) -o $(OUT) $(CFLAGS) $(LDFLAGS)
 
 lint:
-	cppcheck --enable=all --error-exitcode=1 --suppress=missingInclude --suppress=unmatchedSuppression src/
+	cppcheck --enable=all --error-exitcode=1 \
+		--suppress=missingInclude \
+		--suppress=missingIncludeSystem \
+		--suppress=unmatchedSuppression \
+		--suppress=normalCheckLevelMaxBranches \
+		src/
 	flawfinder src/
 
 clean:

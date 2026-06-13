@@ -9,6 +9,9 @@ libraylib.def
 # cppcheck report
 *.xml
 
+# SonarCloud build-wrapper output
+bw-output/
+
 # Editor / OS
 .vscode/
 *.suo

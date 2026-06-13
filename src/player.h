@@ -7,6 +7,8 @@ typedef struct {
     int next_dir_col, next_dir_row;
     float move_t;
     float speed;
+    int score;
+    int ate_power;  // set to 1 for one frame when a power pellet is eaten
 } Player;
 
 void player_init(Player *p);
