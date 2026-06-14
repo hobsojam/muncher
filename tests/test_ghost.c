@@ -199,6 +199,16 @@ static void test_flash_timer_does_not_go_negative(void) {
     TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer >= 0.0f);
 }
 
+static void test_ghosts_draw_flash_popup(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.5f;
+    ghosts[GHOST_BLINKY].flash_col   = 5;
+    ghosts[GHOST_BLINKY].flash_row   = 10;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
 int main(void) {
     RUN_TEST(test_ghost_wrap_col_negative);
     RUN_TEST(test_ghost_wrap_col_overflow);
@@ -222,5 +232,6 @@ int main(void) {
     RUN_TEST(test_ghosts_init_clears_flash_timer);
     RUN_TEST(test_ghosts_update_ticks_flash_timer);
     RUN_TEST(test_flash_timer_does_not_go_negative);
+    RUN_TEST(test_ghosts_draw_flash_popup);
     TESTS_SUMMARY();
 }
