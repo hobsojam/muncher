@@ -3,6 +3,7 @@
 
 /* Reset to a clean, known state before each test */
 static void reset(void) {
+    RaylibStubResetAudio();
     audio_init();
     s_music_muted = 0;
     s_sfx_muted   = 0;
@@ -140,6 +141,39 @@ static void test_audio_close_no_crash(void) {
     audio_close();
 }
 
+static void test_failed_music_load_is_ignored(void) {
+    RaylibStubResetAudio();
+    raylib_stub_music_load_success = 0;
+
+    audio_init();
+    audio_set_music_volume(0.25f);
+    audio_toggle_music_mute();
+    audio_update();
+    audio_close();
+
+    TEST_ASSERT_EQUAL_INT(0, s_music_loaded);
+    TEST_ASSERT_EQUAL_INT(0, raylib_stub_invalid_music_operations);
+}
+
+static void test_failed_sound_loads_are_ignored(void) {
+    RaylibStubResetAudio();
+    raylib_stub_sound_load_success = 0;
+
+    audio_init();
+    audio_set_sfx_volume(0.25f);
+    audio_play_chomp();
+    audio_play_power();
+    audio_play_ghost_eat();
+    audio_play_death();
+    audio_close();
+
+    TEST_ASSERT_EQUAL_INT(0, s_chomp_loaded);
+    TEST_ASSERT_EQUAL_INT(0, s_power_loaded);
+    TEST_ASSERT_EQUAL_INT(0, s_ghost_eat_loaded);
+    TEST_ASSERT_EQUAL_INT(0, s_death_loaded);
+    TEST_ASSERT_EQUAL_INT(0, raylib_stub_invalid_sound_operations);
+}
+
 int main(void) {
     RUN_TEST(test_set_music_volume_clamps_low);
     RUN_TEST(test_set_music_volume_clamps_high);
@@ -160,5 +194,7 @@ int main(void) {
     RUN_TEST(test_play_sounds_when_muted);
     RUN_TEST(test_audio_update_no_crash);
     RUN_TEST(test_audio_close_no_crash);
+    RUN_TEST(test_failed_music_load_is_ignored);
+    RUN_TEST(test_failed_sound_loads_are_ignored);
     TESTS_SUMMARY();
 }

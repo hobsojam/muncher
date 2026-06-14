@@ -14,6 +14,18 @@ typedef struct {
 typedef struct { int ctx; }                  Music;
 typedef struct { int ctx; }                  Sound;
 
+static int raylib_stub_music_load_success = 1;
+static int raylib_stub_sound_load_success = 1;
+static int raylib_stub_invalid_music_operations = 0;
+static int raylib_stub_invalid_sound_operations = 0;
+
+static inline void RaylibStubResetAudio(void) {
+    raylib_stub_music_load_success = 1;
+    raylib_stub_sound_load_success = 1;
+    raylib_stub_invalid_music_operations = 0;
+    raylib_stub_invalid_sound_operations = 0;
+}
+
 #define RED      (Color){230, 41,  55,  255}
 #define GREEN    (Color){0,   228, 48,  255}
 #define BLUE     (Color){0,   121, 241, 255}
@@ -42,14 +54,25 @@ static inline void DrawText(const char *t, int x, int y, int s, Color c)
 
 static inline void  InitAudioDevice(void) {}
 static inline void  CloseAudioDevice(void) {}
-static inline Music LoadMusicStream(const char *f) { (void)f; return (Music){0}; }
-static inline void  UnloadMusicStream(Music m) { (void)m; }
-static inline void  PlayMusicStream(Music m) { (void)m; }
-static inline void  UpdateMusicStream(Music m) { (void)m; }
-static inline void  SetMusicVolume(Music m, float v) { (void)m; (void)v; }
-static inline Sound LoadSound(const char *f) { (void)f; return (Sound){0}; }
-static inline void  UnloadSound(Sound s) { (void)s; }
-static inline void  PlaySound(Sound s) { (void)s; }
-static inline void  SetSoundVolume(Sound s, float v) { (void)s; (void)v; }
+static inline Music LoadMusicStream(const char *f)
+    { (void)f; return (Music){raylib_stub_music_load_success ? 1 : 0}; }
+static inline int IsMusicValid(Music m) { return m.ctx != 0; }
+static inline void  UnloadMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  PlayMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  UpdateMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  SetMusicVolume(Music m, float v)
+    { (void)v; if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline Sound LoadSound(const char *f)
+    { (void)f; return (Sound){raylib_stub_sound_load_success ? 1 : 0}; }
+static inline int IsSoundValid(Sound s) { return s.ctx != 0; }
+static inline void  UnloadSound(Sound s)
+    { if (!IsSoundValid(s)) raylib_stub_invalid_sound_operations++; }
+static inline void  PlaySound(Sound s)
+    { if (!IsSoundValid(s)) raylib_stub_invalid_sound_operations++; }
+static inline void  SetSoundVolume(Sound s, float v)
+    { (void)v; if (!IsSoundValid(s)) raylib_stub_invalid_sound_operations++; }
 
 #endif
