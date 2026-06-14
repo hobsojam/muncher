@@ -15,7 +15,7 @@
 #define GAME_H            (MAP_ROWS * TILE_SIZE + 60)
 #define MAP_OFFSET_Y      60
 #define DEATH_FREEZE_SECS 1.5f
-#define READY_SECS        2.0f
+#define READY_SECS        3.0f
 
 typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
 
@@ -204,9 +204,9 @@ int main(void) {
                              (GAME_W - tw) / 2, GAME_H / 2 - 18, 36, WHITE);
                 }
                 if (ready_timer > 0.0f && !you_win && !game_over) {
-                    int tw = MeasureText("READY!", 40);
-                    DrawText("READY!",
-                             (GAME_W - tw) / 2, GAME_H / 2 - 20, 40, YELLOW);
+                    const char *num = TextFormat("%d", (int)ready_timer + 1);
+                    int tw = MeasureText(num, 72);
+                    DrawText(num, (GAME_W - tw) / 2, GAME_H / 2 - 36, 72, YELLOW);
                 }
             }
         EndTextureMode();
