@@ -27,5 +27,7 @@ static inline void DrawCircle(int cx, int cy, float r, Color c)
 static inline void DrawCircleSector(Vector2 c, float r, float s, float e, int seg, Color col)
     { (void)c;(void)r;(void)s;(void)e;(void)seg;(void)col; }
 static inline int IsKeyDown(int key) { (void)key; return 0; }
+static inline void DrawText(const char *t, int x, int y, int s, Color c)
+    { (void)t;(void)x;(void)y;(void)s;(void)c; }
 
 #endif

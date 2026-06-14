@@ -28,6 +28,8 @@ typedef struct {
     GhostMode mode;
     int       scatter_col, scatter_row;
     Color     color;
+    float     flash_timer;
+    int       flash_col, flash_row;
 } Ghost;
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]);

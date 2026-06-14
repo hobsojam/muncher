@@ -154,6 +154,61 @@ static void test_frighten_reverses_direction(void) {
     TEST_ASSERT_EQUAL_INT(0,  ghosts[GHOST_BLINKY].dir_row);
 }
 
+/* ------------------------------------------------------------------ */
+/* ghost_respawn — eat flash fields                                    */
+/* ------------------------------------------------------------------ */
+
+static void test_ghost_respawn_sets_flash_timer(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
+static void test_ghost_respawn_captures_position(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 15;
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT_EQUAL_INT(7,  ghosts[GHOST_BLINKY].flash_col);
+    TEST_ASSERT_EQUAL_INT(15, ghosts[GHOST_BLINKY].flash_row);
+}
+
+static void test_ghosts_init_clears_flash_timer(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    for (int i = 0; i < GHOST_COUNT; i++)
+        TEST_ASSERT_EQUAL_INT(0, (int)ghosts[i].flash_timer);
+}
+
+static void test_ghosts_update_ticks_flash_timer(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.8f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.1f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer < 0.8f);
+}
+
+static void test_flash_timer_does_not_go_negative(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.05f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.5f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer >= 0.0f);
+}
+
+static void test_ghosts_draw_flash_popup(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.5f;
+    ghosts[GHOST_BLINKY].flash_col   = 5;
+    ghosts[GHOST_BLINKY].flash_row   = 10;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
 int main(void) {
     RUN_TEST(test_ghost_wrap_col_negative);
     RUN_TEST(test_ghost_wrap_col_overflow);
@@ -172,5 +227,11 @@ int main(void) {
     RUN_TEST(test_clyde_near_targets_scatter);
     RUN_TEST(test_frighten_sets_mode);
     RUN_TEST(test_frighten_reverses_direction);
+    RUN_TEST(test_ghost_respawn_sets_flash_timer);
+    RUN_TEST(test_ghost_respawn_captures_position);
+    RUN_TEST(test_ghosts_init_clears_flash_timer);
+    RUN_TEST(test_ghosts_update_ticks_flash_timer);
+    RUN_TEST(test_flash_timer_does_not_go_negative);
+    RUN_TEST(test_ghosts_draw_flash_popup);
     TESTS_SUMMARY();
 }
