@@ -129,10 +129,10 @@ void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
     fright_timer = 0.0f;
 
     // Start spread across the corridor above the ghost house (row 11, cols 9-18 are open)
-    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY,  9, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 25,  0, RED,     0, 0, 0 };
-    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  18, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  2,  0, PINK,    0, 0, 0 };
-    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 27, 30, SKYBLUE, 0, 0, 0 };
-    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  0, 30, ORANGE,  0, 0, 0 };
+    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY,  9, 11,  9, 11,  1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER, 25,  0, RED,     0, 0, 0 };
+    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  18, 11, 18, 11, -1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER,  2,  0, PINK,    0, 0, 0 };
+    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, 11, 11, 11,  1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER, 27, 30, SKYBLUE, 0, 0, 0 };
+    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, 11, 16, 11, -1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER,  0, 30, ORANGE,  0, 0, 0 };
 }
 
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
@@ -177,14 +177,18 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
     // Move each ghost
     for (int i = 0; i < GHOST_COUNT; i++) {
         Ghost *g = &ghosts[i];
+        g->moved = 0;
         g->move_t += g->speed * dt;
 
         int steps = 0;
         while (g->move_t >= 1.0f && steps < MAX_TILE_STEPS_PER_UPDATE) {
             g->move_t -= 1.0f;
+            g->prev_col = g->col;
+            g->prev_row = g->row;
             g->col += g->dir_col;
             g->row += g->dir_row;
             g->col = ghost_wrap_col(g->col);
+            g->moved = 1;
             steps++;
 
             if (g->mode == GMODE_FRIGHTENED) {
@@ -248,8 +252,11 @@ void ghost_respawn(Ghost *g) {
         case GHOST_INKY:   g->col = 11; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
         case GHOST_CLYDE:  g->col = 16; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
     }
+    g->prev_col = g->col;
+    g->prev_row = g->row;
     g->move_t = 0.0f;
     g->speed  = SPEED_NORMAL;
+    g->moved  = 0;
     g->mode   = global_mode;
 }
 

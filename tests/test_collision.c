@@ -72,6 +72,21 @@ static void test_chase_ghost_sets_dead(void) {
     TEST_ASSERT_EQUAL_INT(1, p.dead);
 }
 
+static void test_crossing_scatter_ghost_sets_dead(void) {
+    map_init();
+    Player p; player_init(&p);
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    p.prev_col = 5; p.prev_row = 7;
+    p.col = 6; p.row = 7;
+    p.moved = 1;
+    ghosts[GHOST_BLINKY].mode = GMODE_SCATTER;
+    ghosts[GHOST_BLINKY].prev_col = 6; ghosts[GHOST_BLINKY].prev_row = 7;
+    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 7;
+    ghosts[GHOST_BLINKY].moved = 1;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(1, p.dead);
+}
+
 /* ------------------------------------------------------------------ */
 /* handle_collision — frightened ghost gives score, no death            */
 /* ------------------------------------------------------------------ */
@@ -106,6 +121,22 @@ static void test_frightened_ghost_respawns(void) {
     /* after respawn, ghost must not still be on the player's tile */
     int still_on_player = (ghosts[GHOST_BLINKY].col == p.col && ghosts[GHOST_BLINKY].row == p.row);
     TEST_ASSERT_EQUAL_INT(0, still_on_player);
+}
+
+static void test_crossing_frightened_ghost_adds_score(void) {
+    map_init();
+    Player p; player_init(&p);
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    p.prev_col = 5; p.prev_row = 7;
+    p.col = 6; p.row = 7;
+    p.moved = 1;
+    ghosts[GHOST_BLINKY].mode = GMODE_FRIGHTENED;
+    ghosts[GHOST_BLINKY].prev_col = 6; ghosts[GHOST_BLINKY].prev_row = 7;
+    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 7;
+    ghosts[GHOST_BLINKY].moved = 1;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(200, p.score);
+    TEST_ASSERT_EQUAL_INT(0, p.dead);
 }
 
 /* ------------------------------------------------------------------ */
@@ -155,9 +186,11 @@ int main(void) {
     RUN_TEST(test_no_collision_no_dead);
     RUN_TEST(test_scatter_ghost_sets_dead);
     RUN_TEST(test_chase_ghost_sets_dead);
+    RUN_TEST(test_crossing_scatter_ghost_sets_dead);
     RUN_TEST(test_frightened_ghost_adds_score);
     RUN_TEST(test_frightened_ghost_no_dead);
     RUN_TEST(test_frightened_ghost_respawns);
+    RUN_TEST(test_crossing_frightened_ghost_adds_score);
     RUN_TEST(test_scatter_ghost_overrides_score);
     RUN_TEST(test_two_frightened_ghosts_score);
     RUN_TEST(test_player_init_dead_zero);
