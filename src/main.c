@@ -6,12 +6,14 @@
 #include "collision.h"
 #include "audio.h"
 #include "fruit.h"
+#include "hiscore.h"
 #include <stdlib.h>
 #include <time.h>
 
+#define HISCORE_PATH      "muncher_hiscore.dat"
 #define SCREEN_W          (MAP_COLS * TILE_SIZE)
-#define SCREEN_H          (MAP_ROWS * TILE_SIZE + 40)
-#define MAP_OFFSET_Y      40
+#define SCREEN_H          (MAP_ROWS * TILE_SIZE + 60)
+#define MAP_OFFSET_Y      60
 #define DEATH_FREEZE_SECS 1.5f
 
 typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
@@ -60,6 +62,7 @@ int main(void) {
     Fruit fruit;
     fruit_init(&fruit);
     int       total_dots  = map_dots_remaining();
+    int       hiscore     = hiscore_load(HISCORE_PATH);
     int       you_win     = 0;
     int       game_over   = 0;
     float     death_timer = 0.0f;
@@ -82,6 +85,8 @@ int main(void) {
             if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
             if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
 
+            if (player.score > hiscore) hiscore = player.score;
+
             if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
                 paused = !paused;
                 if (paused) audio_pause(); else audio_resume();
@@ -89,6 +94,7 @@ int main(void) {
 
             if (you_win || game_over) {
                 if (IsKeyPressed(KEY_R)) {
+                    hiscore_save(HISCORE_PATH, hiscore);
                     int reset_ok = 0;
                     if (you_win) {
                         int next_level = level + 1;
@@ -131,10 +137,11 @@ int main(void) {
                 DrawText("Press ENTER to start",
                          (SCREEN_W - tw) / 2, SCREEN_H / 2 + 20, 24, WHITE);
             } else {
-                DrawText("MUNCHER", 10, 10, 20, YELLOW);
-                DrawText(TextFormat("SCORE: %d",  player.score), 130, 10, 20, WHITE);
-                DrawText(TextFormat("LIVES: %d",  player.lives), 300, 10, 20, WHITE);
-                DrawText(TextFormat("LEVEL: %d",  level),        430, 10, 20, WHITE);
+                DrawText("MUNCHER", 10, 4, 20, YELLOW);
+                DrawText(TextFormat("SCORE: %d",  player.score), 130, 4, 20, WHITE);
+                DrawText(TextFormat("LIVES: %d",  player.lives), 300, 4, 20, WHITE);
+                DrawText(TextFormat("LEVEL: %d",  level),        430, 4, 20, WHITE);
+                DrawText(TextFormat("BEST:  %d",  hiscore),      10, 32, 18, GRAY);
                 map_draw(0, MAP_OFFSET_Y);
                 if (!player.dead || (int)(death_timer * 6) % 2)
                     player_draw(&player, 0, MAP_OFFSET_Y);
@@ -163,6 +170,7 @@ int main(void) {
         EndDrawing();
     }
 
+    hiscore_save(HISCORE_PATH, hiscore);
     audio_close();
     CloseWindow();
     return 0;
