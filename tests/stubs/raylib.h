@@ -40,10 +40,20 @@ static inline void RaylibStubResetAudio(void) {
 #define SKYBLUE  (Color){102, 191, 255, 255}
 #define DARKBLUE (Color){0,   82,  172, 255}
 
-#define KEY_RIGHT 262
-#define KEY_LEFT  263
-#define KEY_DOWN  264
-#define KEY_UP    265
+#define KEY_RIGHT  262
+#define KEY_LEFT   263
+#define KEY_DOWN   264
+#define KEY_UP     265
+#define KEY_ENTER  257
+#define KEY_P       80
+#define KEY_F11    300
+
+#define FLAG_WINDOW_RESIZABLE 0x00000004
+
+static inline void SetWindowState(unsigned int flags) { (void)flags; }
+static inline int  IsWindowMaximized(void)            { return 0; }
+static inline void RestoreWindow(void)                {}
+static inline void ToggleFullscreen(void)             {}
 
 static inline void DrawRectangle(int x, int y, int w, int h, Color c)
     { (void)x;(void)y;(void)w;(void)h;(void)c; }
