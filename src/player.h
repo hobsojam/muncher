@@ -10,6 +10,7 @@ typedef struct {
     int score;
     int ate_power;  // set to 1 for one frame when a power pellet is eaten
     int lives;
+    int dead;
 } Player;
 
 void player_init(Player *p);

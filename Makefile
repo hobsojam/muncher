@@ -13,15 +13,16 @@ else
     RM      = rm -f
 endif
 
-SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c
+SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c
 
 TESTCFLAGS  = -Wall -Isrc -Itests/stubs --coverage -fprofile-abs-path
 TEST_MAP    = tests/test_map
 TEST_PLAYER = tests/test_player
 TEST_GHOST  = tests/test_ghost
 TEST_WIN    = tests/test_win
-TEST_LIVES  = tests/test_lives
-TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES)
+TEST_LIVES      = tests/test_lives
+TEST_COLLISION  = tests/test_collision
+TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION)
 
 all: $(OUT)
 
@@ -34,6 +35,7 @@ test: $(TEST_BINS)
 	./$(TEST_GHOST)
 	./$(TEST_WIN)
 	./$(TEST_LIVES)
+	./$(TEST_COLLISION)
 
 $(TEST_MAP): tests/test_map.c tests/test_framework.h tests/stubs/raylib.h src/map.c src/map.h
 	$(CC) tests/test_map.c -o $(TEST_MAP) $(TESTCFLAGS)
@@ -50,6 +52,9 @@ $(TEST_WIN): tests/test_win.c tests/test_framework.h src/map.c src/map.h
 $(TEST_LIVES): tests/test_lives.c tests/test_framework.h tests/stubs/raylib.h src/lives.c src/lives.h src/player.c src/player.h src/map.c src/map.h src/ghost.c src/ghost.h
 	$(CC) tests/test_lives.c src/lives.c src/player.c src/ghost.c src/map.c -o $(TEST_LIVES) $(TESTCFLAGS)
 
+$(TEST_COLLISION): tests/test_collision.c tests/test_framework.h tests/stubs/raylib.h src/collision.c src/collision.h src/player.c src/player.h src/ghost.c src/ghost.h src/map.c src/map.h
+	$(CC) tests/test_collision.c src/collision.c src/player.c src/ghost.c src/map.c -o $(TEST_COLLISION) $(TESTCFLAGS)
+
 lint:
 	cppcheck --enable=all --error-exitcode=1 \
 		--suppress=missingInclude \
@@ -61,4 +66,4 @@ lint:
 
 clean:
 	$(RM) $(OUT)
-	$(RM) $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES)
+	$(RM) $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION)
