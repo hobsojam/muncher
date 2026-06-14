@@ -57,7 +57,7 @@ int main(void) {
     player_init(&player);
 
     Ghost ghosts[GHOST_COUNT];
-    ghosts_init(ghosts);
+    ghosts_init_level(ghosts, level);
 
     Fruit fruit;
     fruit_init(&fruit);
@@ -114,7 +114,7 @@ int main(void) {
                     }
                     if (reset_ok) {
                         int was_win = you_win;
-                        ghosts_init(ghosts);
+                        ghosts_init_level(ghosts, level);
                         fruit_init(&fruit);
                         total_dots  = map_dots_remaining();
                         you_win     = 0;

@@ -130,43 +130,52 @@ void ghost_get_target(const Ghost *g, const Player *player,
             *tr = ref_r + (ref_r - br);
             break;
         }
-        case GHOST_CLYDE:
-            if (ghost_dist_sq(g->col, g->row, player->col, player->row) > 64) {
+        case GHOST_CLYDE: {
+            int r = g->shy_radius;
+            if (ghost_dist_sq(g->col, g->row, player->col, player->row) > r * r) {
                 *tc = player->col; *tr = player->row;
             } else {
                 *tc = g->scatter_col; *tr = g->scatter_row;
             }
             break;
+        }
     }
 }
 
-void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
+void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level) {
     global_index = 0;
     global_timer = 0.0f;
     global_mode  = GMODE_SCATTER;
     fright_timer = 0.0f;
 
+    int shy = 9 - level;
+    if (shy < 1) shy = 1;
+
     // Blinky starts just above the house door, immediately active
     ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY, GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     -1, 0, 0.0f, SPEED_NORMAL, 0,
-                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f };
+                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f, 0, 0 };
 
     // Pinky, Inky, Clyde start inside the house, released on a timer
     ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, SPEED_NORMAL, 0,
-                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f };
+                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f, 0, 0 };
 
     ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, GHOST_HOUSE_MID_ROW,
                                     11, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, SPEED_NORMAL, 0,
-                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f };
+                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f, 0, 0 };
 
     ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, GHOST_HOUSE_MID_ROW,
                                     16, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, SPEED_NORMAL, 0,
-                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f };
+                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f, 0, shy };
+}
+
+void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
+    ghosts_init_level(ghosts, 1);
 }
 
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {

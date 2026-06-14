@@ -402,6 +402,36 @@ static void test_ghosts_draw_flash_popup(void) {
     TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
 }
 
+static void test_clyde_shy_radius_level1(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init_level(ghosts, 1);
+    TEST_ASSERT_EQUAL_INT(8, ghosts[GHOST_CLYDE].shy_radius);
+}
+
+static void test_clyde_shy_radius_decreases_per_level(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init_level(ghosts, 3);
+    TEST_ASSERT_EQUAL_INT(6, ghosts[GHOST_CLYDE].shy_radius);
+}
+
+static void test_clyde_shy_radius_clamps_at_one(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init_level(ghosts, 99);
+    TEST_ASSERT_EQUAL_INT(1, ghosts[GHOST_CLYDE].shy_radius);
+}
+
+static void test_clyde_near_uses_shy_radius(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init_level(ghosts, 2);
+    /* shy_radius=7 — place Clyde 7 tiles from player: still retreats */
+    Player p = {0}; p.col = 14; p.row = 14;
+    ghosts[GHOST_CLYDE].col = 14; ghosts[GHOST_CLYDE].row = 7; /* 7 tiles away */
+    int tc, tr;
+    ghost_get_target(&ghosts[GHOST_CLYDE], &p, ghosts, &tc, &tr);
+    TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_col, tc);
+    TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_row, tr);
+}
+
 int main(void) {
     RUN_TEST(test_frighten_flash_off_when_timer_high);
     RUN_TEST(test_frighten_flash_on_when_timer_low_even_period);
@@ -442,5 +472,9 @@ int main(void) {
     RUN_TEST(test_ghosts_update_ticks_flash_timer);
     RUN_TEST(test_flash_timer_does_not_go_negative);
     RUN_TEST(test_ghosts_draw_flash_popup);
+    RUN_TEST(test_clyde_shy_radius_level1);
+    RUN_TEST(test_clyde_shy_radius_decreases_per_level);
+    RUN_TEST(test_clyde_shy_radius_clamps_at_one);
+    RUN_TEST(test_clyde_near_uses_shy_radius);
     TESTS_SUMMARY();
 }
