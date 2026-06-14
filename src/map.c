@@ -76,7 +76,7 @@ static void braid_maze(unsigned int *rng) {
                     if (nr < 0 || nr >= MAP_ROWS || nc < 0 || nc >= MAP_COLS) continue;
                     if (map[nr][nc] != TILE_EMPTY) continue;
                     if (ghost_zone((nr - 1) / 2, (nc - 1) / 2)) continue;
-                    wpr[nw] = pr; wpc[nw] = pc; nw++;
+                    if (nw < 4) { wpr[nw] = pr; wpc[nw] = pc; nw++; }
                 }
             }
 
@@ -109,7 +109,7 @@ static void stamp_tunnel(void) {
 }
 
 static void place_power_pellets(unsigned int *rng) {
-    struct { int r0, r1, c0, c1; } quads[4] = {
+    static const int QUADS[4][4] = {
         { 1, 11,  1, 13},
         { 1, 11, 14, 26},
         {18, 29,  1, 13},
@@ -117,8 +117,8 @@ static void place_power_pellets(unsigned int *rng) {
     };
     for (int q = 0; q < 4; q++) {
         for (int attempt = 0; attempt < 20; attempt++) {
-            int r = quads[q].r0 + (int)(lcg(rng) % (unsigned int)(quads[q].r1 - quads[q].r0 + 1));
-            int c = quads[q].c0 + (int)(lcg(rng) % (unsigned int)(quads[q].c1 - quads[q].c0 + 1));
+            int r = QUADS[q][0] + (int)(lcg(rng) % (unsigned int)(QUADS[q][1] - QUADS[q][0] + 1));
+            int c = QUADS[q][2] + (int)(lcg(rng) % (unsigned int)(QUADS[q][3] - QUADS[q][2] + 1));
             if (map[r][c] == TILE_DOT) {
                 map[r][c] = TILE_POWER;
                 break;
