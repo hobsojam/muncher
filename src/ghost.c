@@ -37,6 +37,13 @@ int ghost_can_enter(int col, int row) {
     return map[row][col] != TILE_WALL && map[row][col] != TILE_DOOR;
 }
 
+// Like ghost_can_enter but also allows TILE_DOOR — used for exit path.
+static int ghost_can_enter_exiting(int col, int row) {
+    if (row < 0 || row >= MAP_ROWS) return 0;
+    if (col < 0 || col >= MAP_COLS) return 0;
+    return map[row][col] != TILE_WALL;
+}
+
 int ghost_dist_sq(int c1, int r1, int c2, int r2) {
     int dc = c2 - c1;
     int dr = r2 - r1;
@@ -89,6 +96,18 @@ static void choose_dir_random(Ghost *g) {
     }
 }
 
+// Set direction for the next step along the exit path:
+// move horizontally to GHOST_HOUSE_CENTER_COL, then straight up.
+static void choose_exit_dir(Ghost *g) {
+    if (g->col != GHOST_HOUSE_CENTER_COL) {
+        g->dir_col = (g->col < GHOST_HOUSE_CENTER_COL) ? 1 : -1;
+        g->dir_row = 0;
+    } else {
+        g->dir_col = 0;
+        g->dir_row = -1;
+    }
+}
+
 void ghost_get_target(const Ghost *g, const Player *player,
                       const Ghost ghosts[GHOST_COUNT], int *tc, int *tr) {
     if (g->mode == GMODE_SCATTER) {
@@ -127,11 +146,27 @@ void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
     global_mode  = GMODE_SCATTER;
     fright_timer = 0.0f;
 
-    // Start spread across the corridor above the ghost house (row 11, cols 9-18 are open)
-    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY,  9, 11,  9, 11,  1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER, 25,  0, RED,     0, 0, 0 };
-    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  18, 11, 18, 11, -1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER,  2,  0, PINK,    0, 0, 0 };
-    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, 11, 11, 11,  1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER, 27, 30, SKYBLUE, 0, 0, 0 };
-    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, 11, 16, 11, -1, 0, 0.0f, SPEED_NORMAL, 0, GMODE_SCATTER,  0, 30, ORANGE,  0, 0, 0 };
+    // Blinky starts just above the house door, immediately active
+    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY, GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
+                                    GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
+                                    -1, 0, 0.0f, SPEED_NORMAL, 0,
+                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f };
+
+    // Pinky, Inky, Clyde start inside the house, released on a timer
+    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
+                                    GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
+                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f };
+
+    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, GHOST_HOUSE_MID_ROW,
+                                    11, GHOST_HOUSE_MID_ROW,
+                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f };
+
+    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, GHOST_HOUSE_MID_ROW,
+                                    16, GHOST_HOUSE_MID_ROW,
+                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f };
 }
 
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
@@ -142,12 +177,13 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
         if (global_index < MODE_COUNT - 1) global_index++;
         global_mode = MODE_SEQUENCE[global_index];
         for (int i = 0; i < GHOST_COUNT; i++) {
-            if (ghosts[i].mode != GMODE_FRIGHTENED) {
-                ghosts[i].mode = global_mode;
-                // Reverse direction on mode switch
-                ghosts[i].dir_col = -ghosts[i].dir_col;
-                ghosts[i].dir_row = -ghosts[i].dir_row;
-            }
+            if (ghosts[i].mode == GMODE_FRIGHTENED ||
+                ghosts[i].mode == GMODE_HOUSE      ||
+                ghosts[i].mode == GMODE_EXITING) continue;
+            ghosts[i].mode    = global_mode;
+            // Reverse direction on mode switch
+            ghosts[i].dir_col = -ghosts[i].dir_col;
+            ghosts[i].dir_row = -ghosts[i].dir_row;
         }
     }
 
@@ -177,6 +213,16 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
     for (int i = 0; i < GHOST_COUNT; i++) {
         Ghost *g = &ghosts[i];
         g->moved = 0;
+
+        // Tick release timer for house ghosts
+        if (g->mode == GMODE_HOUSE) {
+            g->release_timer -= dt;
+            if (g->release_timer <= 0.0f) {
+                g->mode = GMODE_EXITING;
+                choose_exit_dir(g);
+            }
+        }
+
         g->move_t += g->speed * dt;
 
         int steps = 0;
@@ -186,11 +232,27 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
             g->prev_row = g->row;
             g->col += g->dir_col;
             g->row += g->dir_row;
-            g->col = ghost_wrap_col(g->col);
+            if (g->mode != GMODE_EXITING) g->col = ghost_wrap_col(g->col);
             g->moved = 1;
             steps++;
 
-            if (g->mode == GMODE_FRIGHTENED) {
+            if (g->mode == GMODE_HOUSE) {
+                // Bounce vertically within the house
+                if (!ghost_can_enter(g->col + g->dir_col, g->row + g->dir_row)) {
+                    g->dir_row = -g->dir_row;
+                }
+            } else if (g->mode == GMODE_EXITING) {
+                if (g->row == GHOST_HOUSE_EXIT_ROW) {
+                    // Reached the corridor — join normal AI
+                    g->col = ghost_wrap_col(g->col);
+                    g->mode    = global_mode;
+                    g->dir_col = -1;
+                    g->dir_row = 0;
+                } else {
+                    choose_exit_dir(g);
+                    (void)ghost_can_enter_exiting; // suppress unused-function warning
+                }
+            } else if (g->mode == GMODE_FRIGHTENED) {
                 choose_dir_random(g);
             } else {
                 int tc;
@@ -245,23 +307,23 @@ void ghost_respawn(Ghost *g) {
     g->flash_row   = g->row;
     g->flash_timer = 0.8f;
     audio_play_ghost_eat();
-    switch (g->id) {
-        case GHOST_BLINKY: g->col =  9; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
-        case GHOST_PINKY:  g->col = 18; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
-        case GHOST_INKY:   g->col = 11; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
-        case GHOST_CLYDE:  g->col = 16; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
-    }
-    g->prev_col = g->col;
-    g->prev_row = g->row;
-    g->move_t = 0.0f;
-    g->speed  = SPEED_NORMAL;
-    g->moved  = 0;
-    g->mode   = global_mode;
+    g->col          = GHOST_HOUSE_CENTER_COL;
+    g->row          = GHOST_HOUSE_MID_ROW;
+    g->prev_col     = g->col;
+    g->prev_row     = g->row;
+    g->dir_col      = 0;
+    g->dir_row      = 1;
+    g->move_t       = 0.0f;
+    g->speed        = SPEED_NORMAL;
+    g->moved        = 0;
+    g->mode         = GMODE_HOUSE;
+    g->release_timer = 3.0f;
 }
 
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]) {
     fright_timer = FRIGHTENED_SECS;
     for (int i = 0; i < GHOST_COUNT; i++) {
+        if (ghosts[i].mode == GMODE_HOUSE || ghosts[i].mode == GMODE_EXITING) continue;
         ghosts[i].mode    = GMODE_FRIGHTENED;
         ghosts[i].speed   = SPEED_FRIGHTENED;
         // Reverse direction immediately

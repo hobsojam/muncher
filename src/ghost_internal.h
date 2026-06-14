@@ -5,7 +5,10 @@
 #include "player.h"
 
 enum {
-    GHOST_TUNNEL_ROW = 14,
+    GHOST_TUNNEL_ROW       = 14,
+    GHOST_HOUSE_CENTER_COL = 13,
+    GHOST_HOUSE_EXIT_ROW   = 11,
+    GHOST_HOUSE_MID_ROW    = 14,
 };
 
 int ghost_wrap_col(int col);

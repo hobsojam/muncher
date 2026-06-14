@@ -44,24 +44,183 @@ static void test_ghost_can_enter_oob_non_tunnel(void) {
     TEST_ASSERT_EQUAL_INT(0, ghost_can_enter(0, MAP_ROWS));
 }
 
-static void test_ghosts_init_positions(void) {
+static void test_ghost_can_enter_door_blocked(void) {
     map_init();
-    Ghost ghosts[GHOST_COUNT];
-    ghosts_init(ghosts);
-    TEST_ASSERT_EQUAL_INT(9,  ghosts[GHOST_BLINKY].col);
-    TEST_ASSERT_EQUAL_INT(11, ghosts[GHOST_BLINKY].row);
-    TEST_ASSERT_EQUAL_INT(18, ghosts[GHOST_PINKY].col);
-    TEST_ASSERT_EQUAL_INT(11, ghosts[GHOST_PINKY].row);
+    TEST_ASSERT_EQUAL_INT(0, ghost_can_enter(GHOST_HOUSE_CENTER_COL, 12));
 }
 
-static void test_ghosts_init_scatter_mode(void) {
+/* ------------------------------------------------------------------ */
+/* ghosts_init                                                          */
+/* ------------------------------------------------------------------ */
+
+static void test_ghosts_init_blinky_outside(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
-    for (int i = 0; i < GHOST_COUNT; i++) {
-        TEST_ASSERT_EQUAL_INT(GMODE_SCATTER, ghosts[i].mode);
+    TEST_ASSERT_EQUAL_INT(GHOST_HOUSE_CENTER_COL, ghosts[GHOST_BLINKY].col);
+    TEST_ASSERT_EQUAL_INT(GHOST_HOUSE_EXIT_ROW,   ghosts[GHOST_BLINKY].row);
+    TEST_ASSERT_EQUAL_INT(GMODE_SCATTER,           ghosts[GHOST_BLINKY].mode);
+}
+
+static void test_ghosts_init_others_in_house(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE, ghosts[GHOST_PINKY].mode);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE, ghosts[GHOST_INKY].mode);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE, ghosts[GHOST_CLYDE].mode);
+    /* All inside house rows */
+    TEST_ASSERT(ghosts[GHOST_PINKY].row >= 13 && ghosts[GHOST_PINKY].row <= 15);
+    TEST_ASSERT(ghosts[GHOST_INKY].row  >= 13 && ghosts[GHOST_INKY].row  <= 15);
+    TEST_ASSERT(ghosts[GHOST_CLYDE].row >= 13 && ghosts[GHOST_CLYDE].row <= 15);
+}
+
+static void test_ghosts_init_release_timers_ordered(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    TEST_ASSERT(ghosts[GHOST_PINKY].release_timer  > 0.0f);
+    TEST_ASSERT(ghosts[GHOST_INKY].release_timer   > ghosts[GHOST_PINKY].release_timer);
+    TEST_ASSERT(ghosts[GHOST_CLYDE].release_timer  > ghosts[GHOST_INKY].release_timer);
+}
+
+/* ------------------------------------------------------------------ */
+/* Ghost house bounce                                                   */
+/* ------------------------------------------------------------------ */
+
+static void test_house_ghost_stays_in_house_rows(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    Player player = {0}; player.col = 14; player.row = 29;
+    /* Large release timers: ghosts stay in house for many small dt ticks */
+    ghosts[GHOST_PINKY].release_timer = 999.0f;
+    for (int tick = 0; tick < 40; tick++) {
+        ghosts_update(ghosts, &player, 0.1f);
+        TEST_ASSERT(ghosts[GHOST_PINKY].row >= 13);
+        TEST_ASSERT(ghosts[GHOST_PINKY].row <= 15);
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Ghost house exit                                                     */
+/* ------------------------------------------------------------------ */
+
+static void test_house_ghost_transitions_to_exiting_on_release(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    ghosts[GHOST_PINKY].release_timer = 0.1f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.2f);
+    TEST_ASSERT(ghosts[GHOST_PINKY].mode == GMODE_EXITING ||
+                ghosts[GHOST_PINKY].mode == GMODE_SCATTER  ||
+                ghosts[GHOST_PINKY].mode == GMODE_CHASE);
+}
+
+static void test_exiting_ghost_reaches_exit_row(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    /* Place Pinky at center col, inside house, already exiting */
+    ghosts[GHOST_PINKY].col     = GHOST_HOUSE_CENTER_COL;
+    ghosts[GHOST_PINKY].row     = 14;
+    ghosts[GHOST_PINKY].dir_col = 0;
+    ghosts[GHOST_PINKY].dir_row = -1;
+    ghosts[GHOST_PINKY].mode    = GMODE_EXITING;
+    Player player = {0}; player.col = 14; player.row = 29;
+    /* 1 second at SPEED_NORMAL=6.5 covers 6+ tiles — enough for rows 14→11 */
+    ghosts_update(ghosts, &player, 1.0f);
+    TEST_ASSERT_EQUAL_INT(GHOST_HOUSE_EXIT_ROW, ghosts[GHOST_PINKY].row);
+    TEST_ASSERT(ghosts[GHOST_PINKY].mode == GMODE_SCATTER ||
+                ghosts[GHOST_PINKY].mode == GMODE_CHASE);
+}
+
+static void test_exiting_ghost_navigates_from_side(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    /* Clyde starts at col 16 — must navigate left to col 13 then up */
+    ghosts[GHOST_CLYDE].col     = 16;
+    ghosts[GHOST_CLYDE].row     = 14;
+    ghosts[GHOST_CLYDE].dir_col = -1;
+    ghosts[GHOST_CLYDE].dir_row = 0;
+    ghosts[GHOST_CLYDE].mode    = GMODE_EXITING;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 2.0f);
+    TEST_ASSERT_EQUAL_INT(GHOST_HOUSE_EXIT_ROW, ghosts[GHOST_CLYDE].row);
+    TEST_ASSERT(ghosts[GHOST_CLYDE].mode == GMODE_SCATTER ||
+                ghosts[GHOST_CLYDE].mode == GMODE_CHASE);
+}
+
+/* ------------------------------------------------------------------ */
+/* frighten skips house / exiting ghosts                               */
+/* ------------------------------------------------------------------ */
+
+static void test_frighten_sets_blinky_only(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    ghosts_frighten(ghosts);
+    TEST_ASSERT_EQUAL_INT(GMODE_FRIGHTENED, ghosts[GHOST_BLINKY].mode);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE,      ghosts[GHOST_PINKY].mode);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE,      ghosts[GHOST_INKY].mode);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE,      ghosts[GHOST_CLYDE].mode);
+}
+
+static void test_frighten_skips_exiting_ghost(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    ghosts[GHOST_PINKY].mode = GMODE_EXITING;
+    ghosts_frighten(ghosts);
+    TEST_ASSERT_EQUAL_INT(GMODE_EXITING, ghosts[GHOST_PINKY].mode);
+}
+
+static void test_frighten_reverses_blinky_direction(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    int dc = ghosts[GHOST_BLINKY].dir_col;
+    int dr = ghosts[GHOST_BLINKY].dir_row;
+    ghosts_frighten(ghosts);
+    TEST_ASSERT_EQUAL_INT(-dc, ghosts[GHOST_BLINKY].dir_col);
+    TEST_ASSERT_EQUAL_INT(-dr, ghosts[GHOST_BLINKY].dir_row);
+}
+
+/* ------------------------------------------------------------------ */
+/* ghost_respawn — puts ghost back in house                            */
+/* ------------------------------------------------------------------ */
+
+static void test_ghost_respawn_puts_in_house(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 5;
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT_EQUAL_INT(GMODE_HOUSE, ghosts[GHOST_BLINKY].mode);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].row >= 13 && ghosts[GHOST_BLINKY].row <= 15);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].release_timer > 0.0f);
+}
+
+static void test_ghost_respawn_sets_flash_timer(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
+static void test_ghost_respawn_captures_position(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 15;
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT_EQUAL_INT(7,  ghosts[GHOST_BLINKY].flash_col);
+    TEST_ASSERT_EQUAL_INT(15, ghosts[GHOST_BLINKY].flash_row);
+}
+
+/* ------------------------------------------------------------------ */
+/* scatter / chase target                                               */
+/* ------------------------------------------------------------------ */
 
 static void test_scatter_target_returns_scatter_pos(void) {
     map_init();
@@ -110,7 +269,6 @@ static void test_clyde_far_targets_player(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
     ghosts[GHOST_CLYDE].mode = GMODE_CHASE;
-    // Place Clyde far from player (dist_sq > 64)
     ghosts[GHOST_CLYDE].col = 1; ghosts[GHOST_CLYDE].row = 1;
     Player player = {0};
     player.col = 14; player.row = 20;
@@ -126,7 +284,6 @@ static void test_clyde_near_targets_scatter(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
     ghosts[GHOST_CLYDE].mode = GMODE_CHASE;
-    // Place Clyde adjacent to player (dist_sq <= 64)
     ghosts[GHOST_CLYDE].col = 14; ghosts[GHOST_CLYDE].row = 20;
     Player player = {0};
     player.col = 14; player.row = 20;
@@ -137,25 +294,9 @@ static void test_clyde_near_targets_scatter(void) {
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_row, tr);
 }
 
-static void test_frighten_sets_mode(void) {
-    map_init();
-    Ghost ghosts[GHOST_COUNT];
-    ghosts_init(ghosts);
-    ghosts_frighten(ghosts);
-    for (int i = 0; i < GHOST_COUNT; i++) {
-        TEST_ASSERT_EQUAL_INT(GMODE_FRIGHTENED, ghosts[i].mode);
-    }
-}
-
-static void test_frighten_reverses_direction(void) {
-    map_init();
-    Ghost ghosts[GHOST_COUNT];
-    ghosts_init(ghosts);
-    // Blinky starts dir=(1,0)
-    ghosts_frighten(ghosts);
-    TEST_ASSERT_EQUAL_INT(-1, ghosts[GHOST_BLINKY].dir_col);
-    TEST_ASSERT_EQUAL_INT(0,  ghosts[GHOST_BLINKY].dir_row);
-}
+/* ------------------------------------------------------------------ */
+/* movement                                                             */
+/* ------------------------------------------------------------------ */
 
 static void make_ghost_test_corridor(void) {
     for (int r = 0; r < MAP_ROWS; r++)
@@ -172,7 +313,6 @@ static void test_large_dt_consumes_multiple_ghost_tiles(void) {
     ghosts_init(ghosts);
     Player player = {0};
     player.col = 20; player.row = 11;
-    ghosts[GHOST_BLINKY].mode = GMODE_CHASE;
     ghosts[GHOST_BLINKY].move_t = 0.75f;
     ghosts_update(ghosts, &player, 0.25f);
     TEST_ASSERT_EQUAL_INT(11, ghosts[GHOST_BLINKY].col);
@@ -187,31 +327,14 @@ static void test_very_large_dt_keeps_ghost_move_t_bounded(void) {
     ghosts_init(ghosts);
     Player player = {0};
     player.col = 20; player.row = 11;
-    ghosts[GHOST_BLINKY].mode = GMODE_CHASE;
     ghosts_update(ghosts, &player, 10.0f);
-    TEST_ASSERT(ghosts[GHOST_BLINKY].col != 9);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].col != GHOST_HOUSE_CENTER_COL);
     TEST_ASSERT(ghosts[GHOST_BLINKY].move_t < 1.0f);
 }
 
 /* ------------------------------------------------------------------ */
-/* ghost_respawn — eat flash fields                                    */
+/* flash timer                                                          */
 /* ------------------------------------------------------------------ */
-
-static void test_ghost_respawn_sets_flash_timer(void) {
-    map_init();
-    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghost_respawn(&ghosts[GHOST_BLINKY]);
-    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
-}
-
-static void test_ghost_respawn_captures_position(void) {
-    map_init();
-    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 15;
-    ghost_respawn(&ghosts[GHOST_BLINKY]);
-    TEST_ASSERT_EQUAL_INT(7,  ghosts[GHOST_BLINKY].flash_col);
-    TEST_ASSERT_EQUAL_INT(15, ghosts[GHOST_BLINKY].flash_row);
-}
 
 static void test_ghosts_init_clears_flash_timer(void) {
     map_init();
@@ -257,19 +380,27 @@ int main(void) {
     RUN_TEST(test_ghost_can_enter_open);
     RUN_TEST(test_ghost_can_enter_tunnel_oob);
     RUN_TEST(test_ghost_can_enter_oob_non_tunnel);
-    RUN_TEST(test_ghosts_init_positions);
-    RUN_TEST(test_ghosts_init_scatter_mode);
+    RUN_TEST(test_ghost_can_enter_door_blocked);
+    RUN_TEST(test_ghosts_init_blinky_outside);
+    RUN_TEST(test_ghosts_init_others_in_house);
+    RUN_TEST(test_ghosts_init_release_timers_ordered);
+    RUN_TEST(test_house_ghost_stays_in_house_rows);
+    RUN_TEST(test_house_ghost_transitions_to_exiting_on_release);
+    RUN_TEST(test_exiting_ghost_reaches_exit_row);
+    RUN_TEST(test_exiting_ghost_navigates_from_side);
+    RUN_TEST(test_frighten_sets_blinky_only);
+    RUN_TEST(test_frighten_skips_exiting_ghost);
+    RUN_TEST(test_frighten_reverses_blinky_direction);
+    RUN_TEST(test_ghost_respawn_puts_in_house);
+    RUN_TEST(test_ghost_respawn_sets_flash_timer);
+    RUN_TEST(test_ghost_respawn_captures_position);
     RUN_TEST(test_scatter_target_returns_scatter_pos);
     RUN_TEST(test_blinky_chase_targets_player);
     RUN_TEST(test_pinky_chase_targets_4_ahead);
     RUN_TEST(test_clyde_far_targets_player);
     RUN_TEST(test_clyde_near_targets_scatter);
-    RUN_TEST(test_frighten_sets_mode);
-    RUN_TEST(test_frighten_reverses_direction);
     RUN_TEST(test_large_dt_consumes_multiple_ghost_tiles);
     RUN_TEST(test_very_large_dt_keeps_ghost_move_t_bounded);
-    RUN_TEST(test_ghost_respawn_sets_flash_timer);
-    RUN_TEST(test_ghost_respawn_captures_position);
     RUN_TEST(test_ghosts_init_clears_flash_timer);
     RUN_TEST(test_ghosts_update_ticks_flash_timer);
     RUN_TEST(test_flash_timer_does_not_go_negative);
