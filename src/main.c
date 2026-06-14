@@ -4,6 +4,7 @@
 #include "ghost.h"
 #include "lives.h"
 #include "collision.h"
+#include "audio.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -28,7 +29,7 @@ static void game_update(Player *p, Ghost ghosts[], float dt,
     handle_collision(p, ghosts);
     if (p->dead) {
         *death_timer = DEATH_FREEZE_SECS;
-        /* Add a death sound here — see raylib InitAudioDevice + PlaySound */
+        audio_play_death();
     }
     if (map_dots_remaining() == 0) *you_win = 1;
 }
@@ -36,6 +37,7 @@ static void game_update(Player *p, Ghost ghosts[], float dt,
 int main(void) {
     InitWindow(SCREEN_W, SCREEN_H, "Muncher");
     SetTargetFPS(60);
+    audio_init();
     srand((unsigned)time(NULL));
 
     static int level = 1;
@@ -53,6 +55,14 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
+        audio_update();
+
+        if (IsKeyPressed(KEY_M)) audio_toggle_music_mute();
+        if (IsKeyPressed(KEY_N)) audio_toggle_sfx_mute();
+        if (IsKeyPressed(KEY_LEFT_BRACKET))  audio_step_music_volume(-0.1f);
+        if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
+        if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
+        if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
 
         if (you_win || game_over) {
             if (IsKeyPressed(KEY_R)) {
@@ -101,6 +111,7 @@ int main(void) {
         EndDrawing();
     }
 
+    audio_close();
     CloseWindow();
     return 0;
 }

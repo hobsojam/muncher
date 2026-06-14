@@ -13,9 +13,9 @@ else
     RM      = rm -f
 endif
 
-SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c
+SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c src/audio.c
 
-TESTCFLAGS  = -Wall -Isrc -Itests/stubs --coverage -fprofile-abs-path
+TESTCFLAGS  = -Wall -Itests/stubs -Isrc --coverage -fprofile-abs-path
 TEST_MAP    = tests/test_map
 TEST_PLAYER = tests/test_player
 TEST_GHOST  = tests/test_ghost
