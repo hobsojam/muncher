@@ -31,7 +31,8 @@ static unsigned int lcg(unsigned int *s) {
 
 /* Ghost zone: tile (2ci+1, 2cj+1) falls inside ghost house walls. */
 static int ghost_zone(int ci, int cj) {
-    int tr = 2*ci + 1, tc = 2*cj + 1;
+    int tr = 2*ci + 1;
+    int tc = 2*cj + 1;
     return tr >= 12 && tr <= 16 && tc >= 10 && tc <= 17;
 }
 
@@ -45,10 +46,13 @@ static void carve(int ci, int cj, unsigned int *rng) {
     int ord[4] = {0, 1, 2, 3};
     for (int i = 3; i > 0; i--) {
         int j = (int)(lcg(rng) % (unsigned int)(i + 1));
-        int t = ord[i]; ord[i] = ord[j]; ord[j] = t;
+        int t = ord[i];
+        ord[i] = ord[j];
+        ord[j] = t;
     }
     for (int k = 0; k < 4; k++) {
-        int ni = ci + DROW[ord[k]], nj = cj + DCOL[ord[k]];
+        int ni = ci + DROW[ord[k]];
+        int nj = cj + DCOL[ord[k]];
         if (ni < 0 || ni >= CELL_ROWS || nj < 0 || nj >= CELL_COLS) continue;
         if (s_vis[ni][nj]) continue;
         map[ci + ni + 1][cj + nj + 1] = TILE_EMPTY;
@@ -61,18 +65,23 @@ static void braid_maze(unsigned int *rng) {
     for (int ci = 0; ci < CELL_ROWS; ci++) {
         for (int cj = 0; cj < CELL_COLS; cj++) {
             if (ghost_zone(ci, cj)) continue;
-            int tr = 2*ci + 1, tc = 2*cj + 1;
+            int tr = 2*ci + 1;
+            int tc = 2*cj + 1;
 
             int open = 0;
-            int wpr[4], wpc[4], nw = 0;
+            int wpr[4];
+            int wpc[4];
+            int nw = 0;
 
             for (int k = 0; k < 4; k++) {
-                int pr = tr + DROW[k], pc = tc + DCOL[k];
+                int pr = tr + DROW[k];
+                int pc = tc + DCOL[k];
                 if (pr < 0 || pr >= MAP_ROWS || pc < 0 || pc >= MAP_COLS) continue;
                 if (map[pr][pc] == TILE_EMPTY) {
                     open++;
                 } else if (map[pr][pc] == TILE_WALL) {
-                    int nr = pr + DROW[k], nc = pc + DCOL[k];
+                    int nr = pr + DROW[k];
+                    int nc = pc + DCOL[k];
                     if (nr < 0 || nr >= MAP_ROWS || nc < 0 || nc >= MAP_COLS) continue;
                     if (map[nr][nc] != TILE_EMPTY) continue;
                     if (ghost_zone((nr - 1) / 2, (nc - 1) / 2)) continue;
@@ -138,12 +147,14 @@ static int map_all_dots_reachable(void) {
         for (int c = 0; c < MAP_COLS; c++)
             seen[r][c] = 0;
 
-    int head = 0, tail = 0;
+    int head = 0;
+    int tail = 0;
     seen[29][14] = 1;
     qr[tail] = 29; qc[tail++] = 14;
 
     while (head < tail) {
-        int r = qr[head], c = qc[head++];
+        int r = qr[head];
+        int c = qc[head++];
         for (int d = 0; d < 4; d++) {
             int nr = r + DR[d];
             int nc = c + DC[d];

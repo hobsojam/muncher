@@ -2,9 +2,12 @@
 #define PLAYER_H
 
 typedef struct {
-    int col, row;
-    int dir_col, dir_row;
-    int next_dir_col, next_dir_row;
+    int col;
+    int row;
+    int dir_col;
+    int dir_row;
+    int next_dir_col;
+    int next_dir_row;
     float move_t;
     float speed;
     int score;

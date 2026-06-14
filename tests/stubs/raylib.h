@@ -1,8 +1,16 @@
 #ifndef RAYLIB_H
 #define RAYLIB_H
 
-typedef struct { unsigned char r, g, b, a; } Color;
-typedef struct { float x, y; }               Vector2;
+typedef struct {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    unsigned char a;
+} Color;
+typedef struct {
+    float x;
+    float y;
+} Vector2;
 typedef struct { int ctx; }                  Music;
 typedef struct { int ctx; }                  Sound;
 

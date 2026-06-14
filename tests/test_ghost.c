@@ -71,7 +71,8 @@ static void test_scatter_target_returns_scatter_pos(void) {
     ghosts_init(ghosts);
     Player player = {0};
     player.col = 14; player.row = 29;
-    int tc, tr;
+    int tc;
+    int tr;
     get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_BLINKY].scatter_col, tc);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_BLINKY].scatter_row, tr);
@@ -84,7 +85,8 @@ static void test_blinky_chase_targets_player(void) {
     ghosts[GHOST_BLINKY].mode = GMODE_CHASE;
     Player player = {0};
     player.col = 10; player.row = 20;
-    int tc, tr;
+    int tc;
+    int tr;
     get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(10, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
@@ -98,7 +100,8 @@ static void test_pinky_chase_targets_4_ahead(void) {
     Player player = {0};
     player.col = 10; player.row = 20;
     player.dir_col = 1; player.dir_row = 0;
-    int tc, tr;
+    int tc;
+    int tr;
     get_target(&ghosts[GHOST_PINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(14, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
@@ -113,7 +116,8 @@ static void test_clyde_far_targets_player(void) {
     ghosts[GHOST_CLYDE].col = 1; ghosts[GHOST_CLYDE].row = 1;
     Player player = {0};
     player.col = 14; player.row = 20;
-    int tc, tr;
+    int tc;
+    int tr;
     get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(14, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
@@ -128,7 +132,8 @@ static void test_clyde_near_targets_scatter(void) {
     ghosts[GHOST_CLYDE].col = 14; ghosts[GHOST_CLYDE].row = 20;
     Player player = {0};
     player.col = 14; player.row = 20;
-    int tc, tr;
+    int tc;
+    int tr;
     get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_col, tc);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_row, tr);

@@ -14,7 +14,8 @@ static const char *_current_test = "";
 } while (0)
 
 #define TEST_ASSERT_EQUAL_INT(expected, actual) do { \
-    int _e = (expected), _a = (actual); \
+    int _e = (expected); \
+    int _a = (actual); \
     if (_e != _a) { \
         printf("FAIL  %s: expected %d but got %d (%s:%d)\n", \
                _current_test, _e, _a, __FILE__, __LINE__); \
