@@ -40,7 +40,7 @@ int main(void) {
     audio_init();
     srand((unsigned)time(NULL));
 
-    static int level = 1;
+    int level = 1;
     map_generate(level);
 
     Player player;
@@ -49,9 +49,9 @@ int main(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
 
-    static int   you_win     = 0;
-    static int   game_over   = 0;
-    static float death_timer = 0.0f;
+    int   you_win     = 0;
+    int   game_over   = 0;
+    float death_timer = 0.0f;
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
