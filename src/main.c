@@ -56,6 +56,7 @@ int main(void) {
     int   you_win     = 0;
     int   game_over   = 0;
     float death_timer = 0.0f;
+    int   paused      = 0;
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -67,6 +68,11 @@ int main(void) {
         if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
         if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
         if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
+
+        if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
+            paused = !paused;
+            if (paused) audio_pause(); else audio_resume();
+        }
 
         if (you_win || game_over) {
             if (IsKeyPressed(KEY_R)) {
@@ -90,9 +96,10 @@ int main(void) {
                     you_win     = 0;
                     game_over   = 0;
                     death_timer = 0.0f;
+                    paused      = 0;
                 }
             }
-        } else {
+        } else if (!paused) {
             game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
         }
 
@@ -119,6 +126,10 @@ int main(void) {
                          (SCREEN_W - tw) / 2, SCREEN_H / 2 - 20, 40, RED);
                 DrawText("Press R to restart",
                          SCREEN_W / 2 - 95, SCREEN_H / 2 + 30, 20, WHITE);
+            }
+            if (paused) {
+                int tw = MeasureText("PAUSED", 36);
+                DrawText("PAUSED", (SCREEN_W - tw) / 2, SCREEN_H / 2 - 18, 36, WHITE);
             }
         EndDrawing();
     }

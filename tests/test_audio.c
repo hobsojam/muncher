@@ -141,6 +141,34 @@ static void test_audio_close_no_crash(void) {
     audio_close();
 }
 
+static void test_audio_pause_no_invalid_ops(void) {
+    audio_internal_stub_reset();
+    audio_init();
+    audio_pause();
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_stub_invalid_music_ops());
+    audio_close();
+}
+
+static void test_audio_resume_no_invalid_ops(void) {
+    audio_internal_stub_reset();
+    audio_init();
+    audio_resume();
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_stub_invalid_music_ops());
+    audio_close();
+}
+
+static void test_audio_pause_no_crash_when_music_not_loaded(void) {
+    reset(); /* resets s_music_loaded to 0 */
+    audio_pause();
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_stub_invalid_music_ops());
+}
+
+static void test_audio_resume_no_crash_when_music_not_loaded(void) {
+    reset();
+    audio_resume();
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_stub_invalid_music_ops());
+}
+
 static void test_failed_music_load_is_ignored(void) {
     audio_internal_stub_reset();
     audio_internal_stub_set_music_load_success(0);
@@ -194,6 +222,10 @@ int main(void) {
     RUN_TEST(test_play_sounds_when_muted);
     RUN_TEST(test_audio_update_no_crash);
     RUN_TEST(test_audio_close_no_crash);
+    RUN_TEST(test_audio_pause_no_invalid_ops);
+    RUN_TEST(test_audio_resume_no_invalid_ops);
+    RUN_TEST(test_audio_pause_no_crash_when_music_not_loaded);
+    RUN_TEST(test_audio_resume_no_crash_when_music_not_loaded);
     RUN_TEST(test_failed_music_load_is_ignored);
     RUN_TEST(test_failed_sound_loads_are_ignored);
     TESTS_SUMMARY();
