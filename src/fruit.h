@@ -13,6 +13,9 @@ typedef struct {
     int   eaten;
     float timer;
     int   score;
+    float popup_timer;
+    int   popup_col;
+    int   popup_row;
 } Fruit;
 
 void fruit_init(Fruit *f);

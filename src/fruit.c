@@ -6,12 +6,15 @@
 #define FRUIT_SCORE 100
 
 void fruit_init(Fruit *f) {
-    f->col    = FRUIT_COL;
-    f->row    = FRUIT_ROW;
-    f->active = 0;
-    f->eaten  = 0;
-    f->timer  = 0.0f;
-    f->score  = FRUIT_SCORE;
+    f->col         = FRUIT_COL;
+    f->row         = FRUIT_ROW;
+    f->active      = 0;
+    f->eaten       = 0;
+    f->timer       = 0.0f;
+    f->score       = FRUIT_SCORE;
+    f->popup_timer = 0.0f;
+    f->popup_col   = FRUIT_COL;
+    f->popup_row   = FRUIT_ROW;
 }
 
 void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float dt) {
@@ -19,11 +22,18 @@ void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float
         f->active = 1;
         f->timer  = FRUIT_SECS;
     }
+    if (f->popup_timer > 0.0f) {
+        f->popup_timer -= dt;
+        if (f->popup_timer < 0.0f) f->popup_timer = 0.0f;
+    }
     if (!f->active) return;
     if (p->col == f->col && p->row == f->row) {
-        p->score += f->score;
-        f->active = 0;
-        f->eaten  = 1;
+        f->popup_col   = f->col;
+        f->popup_row   = f->row;
+        f->popup_timer = 0.8f;
+        p->score      += f->score;
+        f->active      = 0;
+        f->eaten       = 1;
         return;
     }
     f->timer -= dt;
@@ -34,8 +44,14 @@ void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float
 }
 
 void fruit_draw(const Fruit *f, int offset_x, int offset_y) {
-    if (!f->active) return;
-    int px = (int)((float)f->col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x;
-    int py = (int)((float)f->row * TILE_SIZE + TILE_SIZE / 2.0f) + offset_y;
-    DrawCircle(px, py, TILE_SIZE / 2 - 2, (Color){220, 20, 60, 255});
+    if (f->active) {
+        int px = (int)((float)f->col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x;
+        int py = (int)((float)f->row * TILE_SIZE + TILE_SIZE / 2.0f) + offset_y;
+        DrawCircle(px, py, TILE_SIZE / 2 - 2, (Color){220, 20, 60, 255});
+    }
+    if (f->popup_timer > 0.0f) {
+        int fx = (int)((float)f->popup_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
+        int fy = (int)((float)f->popup_row * TILE_SIZE) + offset_y - 4;
+        DrawText(TextFormat("+%d", f->score), fx, fy, 14, WHITE);
+    }
 }

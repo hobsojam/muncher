@@ -120,6 +120,59 @@ static void test_fruit_no_respawn_after_eaten(void) {
     TEST_ASSERT_EQUAL_INT(0, f.active);
 }
 
+/* ------------------------------------------------------------------ */
+/* fruit_update — score popup                                           */
+/* ------------------------------------------------------------------ */
+
+static void test_fruit_popup_timer_set_on_eat(void) {
+    map_init();
+    Fruit f; fruit_init(&f);
+    Player p; player_init(&p);
+    f.active = 1;
+    p.col = f.col; p.row = f.row;
+    fruit_update(&f, &p, 0, 100, 0.0f);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
+static void test_fruit_popup_timer_ticks_down(void) {
+    map_init();
+    Fruit f; fruit_init(&f);
+    Player p; player_init(&p);
+    f.active = 1;
+    p.col = f.col; p.row = f.row;
+    fruit_update(&f, &p, 0, 100, 0.0f);
+    float t0 = f.popup_timer;
+    fruit_update(&f, &p, 0, 100, 0.1f);
+    TEST_ASSERT(f.popup_timer < t0);
+}
+
+static void test_fruit_popup_timer_zero_on_init(void) {
+    Fruit f;
+    fruit_init(&f);
+    TEST_ASSERT(f.popup_timer == 0.0f);
+}
+
+/* ------------------------------------------------------------------ */
+/* fruit_draw — smoke tests (exercises raylib stubs for coverage)       */
+/* ------------------------------------------------------------------ */
+
+static void test_fruit_draw_active_no_crash(void) {
+    Fruit f; fruit_init(&f);
+    f.active = 1;
+    fruit_draw(&f, 0, 0);
+}
+
+static void test_fruit_draw_popup_no_crash(void) {
+    Fruit f; fruit_init(&f);
+    f.popup_timer = 0.5f;
+    fruit_draw(&f, 0, 0);
+}
+
+static void test_fruit_draw_inactive_no_crash(void) {
+    Fruit f; fruit_init(&f);
+    fruit_draw(&f, 0, 0);
+}
+
 int main(void) {
     RUN_TEST(test_fruit_init_not_active);
     RUN_TEST(test_fruit_init_not_eaten);
@@ -133,5 +186,11 @@ int main(void) {
     RUN_TEST(test_fruit_no_score_when_eaten);
     RUN_TEST(test_fruit_expires_after_timer);
     RUN_TEST(test_fruit_no_respawn_after_eaten);
+    RUN_TEST(test_fruit_popup_timer_zero_on_init);
+    RUN_TEST(test_fruit_popup_timer_set_on_eat);
+    RUN_TEST(test_fruit_popup_timer_ticks_down);
+    RUN_TEST(test_fruit_draw_inactive_no_crash);
+    RUN_TEST(test_fruit_draw_active_no_crash);
+    RUN_TEST(test_fruit_draw_popup_no_crash);
     TESTS_SUMMARY();
 }
