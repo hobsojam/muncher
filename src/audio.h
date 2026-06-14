@@ -9,6 +9,7 @@ void audio_play_chomp(void);
 void audio_play_power(void);
 void audio_play_ghost_eat(void);
 void audio_play_death(void);
+void audio_play_fruit_eat(void);
 
 void audio_pause(void);
 void audio_resume(void);
