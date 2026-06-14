@@ -4,12 +4,15 @@
 typedef struct {
     int col;
     int row;
+    int prev_col;
+    int prev_row;
     int dir_col;
     int dir_row;
     int next_dir_col;
     int next_dir_row;
     float move_t;
     float speed;
+    int moved;
     int score;
     int ate_power;  // set to 1 for one frame when a power pellet is eaten
     int lives;
