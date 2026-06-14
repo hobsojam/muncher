@@ -24,6 +24,10 @@ TEST_LIVES      = tests/test_lives
 TEST_COLLISION  = tests/test_collision
 TEST_AUDIO      = tests/test_audio
 TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION) $(TEST_AUDIO)
+TEST_EXES   = $(addsuffix .exe,$(TEST_BINS))
+TEST_OUTPUTS = $(TEST_BINS) $(TEST_EXES)
+TEST_CLEAN_TARGETS = $(OUT) $(TEST_OUTPUTS)
+TEST_CLEAN_SCRIPT = $(foreach file,$(TEST_CLEAN_TARGETS),if (Test-Path -LiteralPath '$(file)') { Remove-Item -LiteralPath '$(file)' -Force };)
 
 all: $(OUT)
 
@@ -73,5 +77,9 @@ lint:
 	flawfinder src/
 
 clean:
+ifeq ($(OS),Windows_NT)
+	powershell -NoProfile -Command "$(TEST_CLEAN_SCRIPT)"
+else
 	$(RM) $(OUT)
-	$(RM) $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION) $(TEST_AUDIO)
+	$(RM) $(TEST_OUTPUTS)
+endif

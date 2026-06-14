@@ -23,10 +23,13 @@ typedef struct {
     GhostId   id;
     int       col;
     int       row;
+    int       prev_col;
+    int       prev_row;
     int       dir_col;
     int       dir_row;
     float     move_t;
     float     speed;
+    int       moved;
     GhostMode mode;
     int       scatter_col;
     int       scatter_row;
