@@ -7,6 +7,7 @@
 #define PLAYER_START_COL 14
 #define PLAYER_START_ROW 29
 #define PLAYER_SPEED     8.0f
+#define MAX_TILE_STEPS_PER_UPDATE 8
 
 int player_wrap_col(int col) {
     return (col + MAP_COLS) % MAP_COLS;
@@ -21,12 +22,15 @@ int player_can_enter(int col, int row) {
 void player_init(Player *p) {
     p->col = PLAYER_START_COL;
     p->row = PLAYER_START_ROW;
+    p->prev_col = p->col;
+    p->prev_row = p->row;
     p->dir_col = 0;
     p->dir_row = 0;
     p->next_dir_col = 0;
     p->next_dir_row = 0;
     p->move_t = 0.0f;
     p->speed = PLAYER_SPEED;
+    p->moved     = 0;
     p->score     = 0;
     p->ate_power = 0;
     p->lives     = 3;
@@ -37,16 +41,20 @@ void player_init(Player *p) {
 void player_respawn(Player *p) {
     p->col          = PLAYER_START_COL;
     p->row          = PLAYER_START_ROW;
+    p->prev_col     = p->col;
+    p->prev_row     = p->row;
     p->dir_col      = 0;
     p->dir_row      = 0;
     p->next_dir_col = 0;
     p->next_dir_row = 0;
     p->move_t       = 0.0f;
+    p->moved        = 0;
     p->ate_power    = 0;
     p->dead         = 0;
 }
 
 void player_update(Player *p, float dt) {
+    p->moved = 0;
     if (IsKeyDown(KEY_RIGHT)) { p->next_dir_col =  1; p->next_dir_row =  0; }
     if (IsKeyDown(KEY_LEFT))  { p->next_dir_col = -1; p->next_dir_row =  0; }
     if (IsKeyDown(KEY_DOWN))  { p->next_dir_col =  0; p->next_dir_row =  1; }
@@ -61,11 +69,16 @@ void player_update(Player *p, float dt) {
     }
 
     p->move_t += p->speed * dt;
-    if (p->move_t >= 1.0f) {
+    int steps = 0;
+    while (p->move_t >= 1.0f && steps < MAX_TILE_STEPS_PER_UPDATE) {
         p->move_t -= 1.0f;
+        p->prev_col = p->col;
+        p->prev_row = p->row;
         p->col += p->dir_col;
         p->row += p->dir_row;
         p->col = player_wrap_col(p->col);
+        p->moved = 1;
+        steps++;
 
         p->ate_power = 0;
         if (map[p->row][p->col] == TILE_DOT) {
@@ -86,7 +99,12 @@ void player_update(Player *p, float dt) {
             p->dir_col = 0;
             p->dir_row = 0;
             p->move_t = 0.0f;
+            break;
         }
+    }
+
+    if (p->move_t >= 1.0f) {
+        p->move_t = 0.0f;
     }
 }
 
