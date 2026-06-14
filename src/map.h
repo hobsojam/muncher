@@ -19,7 +19,5 @@ void map_generate(int level);
 void map_init(void);
 void map_draw(int offset_x, int offset_y);
 int  map_dots_remaining(void);
-int  map_power_count(void);
-int  map_all_dots_reachable(void);
 
 #endif

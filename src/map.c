@@ -127,7 +127,7 @@ static void place_power_pellets(unsigned int *rng) {
     }
 }
 
-int map_power_count(void) {
+static int map_power_count(void) {
     int n = 0;
     for (int r = 0; r < MAP_ROWS; r++)
         for (int c = 0; c < MAP_COLS; c++)
@@ -135,7 +135,7 @@ int map_power_count(void) {
     return n;
 }
 
-int map_all_dots_reachable(void) {
+static int map_all_dots_reachable(void) {
     static int seen[MAP_ROWS][MAP_COLS];
     static int qr[MAP_ROWS * MAP_COLS];
     static int qc[MAP_ROWS * MAP_COLS];
@@ -208,6 +208,7 @@ void map_generate(int level) {
     }
 }
 
+// cppcheck-suppress unusedFunction
 void map_init(void) { map_generate(1); }
 
 /* ------------------------------------------------------------------ */
