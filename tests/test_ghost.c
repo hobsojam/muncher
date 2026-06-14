@@ -159,6 +159,42 @@ static void test_frighten_reverses_direction(void) {
     TEST_ASSERT_EQUAL_INT(0,  ghosts[GHOST_BLINKY].dir_row);
 }
 
+static void make_ghost_test_corridor(void) {
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            map[r][c] = TILE_WALL;
+    for (int c = 0; c < MAP_COLS; c++)
+        map[11][c] = TILE_EMPTY;
+}
+
+static void test_large_dt_consumes_multiple_ghost_tiles(void) {
+    map_init();
+    make_ghost_test_corridor();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    Player player = {0};
+    player.col = 20; player.row = 11;
+    ghosts[GHOST_BLINKY].mode = GMODE_CHASE;
+    ghosts[GHOST_BLINKY].move_t = 0.75f;
+    ghosts_update(ghosts, &player, 0.25f);
+    TEST_ASSERT_EQUAL_INT(11, ghosts[GHOST_BLINKY].col);
+    TEST_ASSERT_EQUAL_INT(11, ghosts[GHOST_BLINKY].row);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].move_t < 1.0f);
+}
+
+static void test_very_large_dt_keeps_ghost_move_t_bounded(void) {
+    map_init();
+    make_ghost_test_corridor();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    Player player = {0};
+    player.col = 20; player.row = 11;
+    ghosts[GHOST_BLINKY].mode = GMODE_CHASE;
+    ghosts_update(ghosts, &player, 10.0f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].col != 9);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].move_t < 1.0f);
+}
+
 /* ------------------------------------------------------------------ */
 /* ghost_respawn — eat flash fields                                    */
 /* ------------------------------------------------------------------ */
@@ -232,6 +268,8 @@ int main(void) {
     RUN_TEST(test_clyde_near_targets_scatter);
     RUN_TEST(test_frighten_sets_mode);
     RUN_TEST(test_frighten_reverses_direction);
+    RUN_TEST(test_large_dt_consumes_multiple_ghost_tiles);
+    RUN_TEST(test_very_large_dt_keeps_ghost_move_t_bounded);
     RUN_TEST(test_ghost_respawn_sets_flash_timer);
     RUN_TEST(test_ghost_respawn_captures_position);
     RUN_TEST(test_ghosts_init_clears_flash_timer);
