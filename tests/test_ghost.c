@@ -44,6 +44,37 @@ static void test_ghost_can_enter_oob_non_tunnel(void) {
     TEST_ASSERT_EQUAL_INT(0, ghost_can_enter(0, MAP_ROWS));
 }
 
+static void test_frighten_flash_off_when_timer_high(void) {
+    TEST_ASSERT_EQUAL_INT(0, ghost_frighten_flashing(3.0f));
+}
+
+static void test_frighten_flash_on_when_timer_low_even_period(void) {
+    /* t=1.6: (int)(1.6*5)=8, 8%2=0 → flashing */
+    TEST_ASSERT_EQUAL_INT(1, ghost_frighten_flashing(1.6f));
+}
+
+static void test_frighten_flash_off_when_timer_low_odd_period(void) {
+    /* t=1.8: (int)(1.8*5)=9, 9%2=1 → not flashing */
+    TEST_ASSERT_EQUAL_INT(0, ghost_frighten_flashing(1.8f));
+}
+
+static void test_frighten_flash_off_above_threshold(void) {
+    TEST_ASSERT_EQUAL_INT(0, ghost_frighten_flashing(GHOST_FRIGHTEN_FLASH_SECS + 0.1f));
+}
+
+static void test_internal_fright_timer_zero_after_init(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    TEST_ASSERT(ghost_internal_fright_timer() == 0.0f);
+}
+
+static void test_internal_fright_timer_set_after_frighten(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts_frighten(ghosts);
+    TEST_ASSERT(ghost_internal_fright_timer() > 0.0f);
+}
+
 static void test_ghost_can_enter_door_blocked(void) {
     map_init();
     TEST_ASSERT_EQUAL_INT(0, ghost_can_enter(GHOST_HOUSE_CENTER_COL, 12));
@@ -372,6 +403,12 @@ static void test_ghosts_draw_flash_popup(void) {
 }
 
 int main(void) {
+    RUN_TEST(test_frighten_flash_off_when_timer_high);
+    RUN_TEST(test_frighten_flash_on_when_timer_low_even_period);
+    RUN_TEST(test_frighten_flash_off_when_timer_low_odd_period);
+    RUN_TEST(test_frighten_flash_off_above_threshold);
+    RUN_TEST(test_internal_fright_timer_zero_after_init);
+    RUN_TEST(test_internal_fright_timer_set_after_frighten);
     RUN_TEST(test_ghost_wrap_col_negative);
     RUN_TEST(test_ghost_wrap_col_overflow);
     RUN_TEST(test_ghost_wrap_col_normal);
