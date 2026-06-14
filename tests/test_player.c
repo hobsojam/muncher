@@ -1,47 +1,46 @@
 #include "test_framework.h"
-#include "../src/map.c"
-#include "../src/player.c"
-
-// wrap_col and can_enter are static in player.c; including the .c makes them visible here.
+#include "map.h"
+#include "player.h"
+#include "player_internal.h"
 
 static void test_wrap_col_normal(void) {
-    TEST_ASSERT_EQUAL_INT(5, wrap_col(5));
+    TEST_ASSERT_EQUAL_INT(5, player_wrap_col(5));
 }
 
 static void test_wrap_col_negative(void) {
-    TEST_ASSERT_EQUAL_INT(27, wrap_col(-1));
+    TEST_ASSERT_EQUAL_INT(27, player_wrap_col(-1));
 }
 
 static void test_wrap_col_overflow(void) {
-    TEST_ASSERT_EQUAL_INT(0, wrap_col(MAP_COLS));
+    TEST_ASSERT_EQUAL_INT(0, player_wrap_col(MAP_COLS));
 }
 
 static void test_can_enter_wall(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(0, can_enter(0, 0));
+    TEST_ASSERT_EQUAL_INT(0, player_can_enter(0, 0));
 }
 
 static void test_can_enter_dot(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(1, can_enter(1, 1));
+    TEST_ASSERT_EQUAL_INT(1, player_can_enter(1, 1));
 }
 
 static void test_can_enter_door_blocked(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(0, can_enter(13, 12));
+    TEST_ASSERT_EQUAL_INT(0, player_can_enter(13, 12));
 }
 
 static void test_can_enter_tunnel_oob(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(1, can_enter(-1, TUNNEL_ROW));
-    TEST_ASSERT_EQUAL_INT(1, can_enter(MAP_COLS, TUNNEL_ROW));
+    TEST_ASSERT_EQUAL_INT(1, player_can_enter(-1, PLAYER_TUNNEL_ROW));
+    TEST_ASSERT_EQUAL_INT(1, player_can_enter(MAP_COLS, PLAYER_TUNNEL_ROW));
 }
 
 static void test_can_enter_oob_non_tunnel(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(0, can_enter(-1, 0));
-    TEST_ASSERT_EQUAL_INT(0, can_enter(0, -1));
-    TEST_ASSERT_EQUAL_INT(0, can_enter(0, MAP_ROWS));
+    TEST_ASSERT_EQUAL_INT(0, player_can_enter(-1, 0));
+    TEST_ASSERT_EQUAL_INT(0, player_can_enter(0, -1));
+    TEST_ASSERT_EQUAL_INT(0, player_can_enter(0, MAP_ROWS));
 }
 
 static void test_score_dot(void) {

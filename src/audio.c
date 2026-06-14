@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "audio_internal.h"
 #include "raylib.h"
 
 static Music s_music;
@@ -110,3 +111,32 @@ void audio_toggle_music_mute(void) {
 void audio_toggle_sfx_mute(void) {
     s_sfx_muted = !s_sfx_muted;
 }
+
+#ifdef MUNCHER_TEST
+void audio_internal_reset_state(void) {
+    s_music_vol = 1.0f;
+    s_sfx_vol = 1.0f;
+    s_music_muted = 0;
+    s_sfx_muted = 0;
+    s_music_loaded = 0;
+    s_chomp_loaded = 0;
+    s_power_loaded = 0;
+    s_ghost_eat_loaded = 0;
+    s_death_loaded = 0;
+}
+
+float audio_internal_music_volume(void) { return s_music_vol; }
+float audio_internal_sfx_volume(void) { return s_sfx_vol; }
+int audio_internal_music_muted(void) { return s_music_muted; }
+int audio_internal_sfx_muted(void) { return s_sfx_muted; }
+int audio_internal_music_loaded(void)     { return s_music_loaded; }
+int audio_internal_chomp_loaded(void)     { return s_chomp_loaded; }
+int audio_internal_power_loaded(void)     { return s_power_loaded; }
+int audio_internal_ghost_eat_loaded(void) { return s_ghost_eat_loaded; }
+int audio_internal_death_loaded(void)     { return s_death_loaded; }
+void audio_internal_stub_reset(void)                     { RaylibStubResetAudio(); }
+void audio_internal_stub_set_music_load_success(int v)   { raylib_stub_music_load_success = v; }
+void audio_internal_stub_set_sound_load_success(int v)   { raylib_stub_sound_load_success = v; }
+int audio_internal_stub_invalid_music_ops(void)          { return raylib_stub_invalid_music_operations; }
+int audio_internal_stub_invalid_sound_ops(void)          { return raylib_stub_invalid_sound_operations; }
+#endif

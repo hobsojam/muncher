@@ -1,4 +1,5 @@
 #include "ghost.h"
+#include "ghost_internal.h"
 #include "player.h"
 #include "map.h"
 #include "raylib.h"
@@ -26,19 +27,17 @@ static float     fright_timer  = 0.0f;
 // Up, left, down, right — classic Pac-Man priority order
 static const int DIRS[4][2] = { {0,-1}, {-1,0}, {0,1}, {1,0} };
 
-#define TUNNEL_ROW 14
-
-static int ghost_wrap_col(int col) {
+int ghost_wrap_col(int col) {
     return (col + MAP_COLS) % MAP_COLS;
 }
 
-static int ghost_can_enter(int col, int row) {
+int ghost_can_enter(int col, int row) {
     if (row < 0 || row >= MAP_ROWS) return 0;
-    if (col < 0 || col >= MAP_COLS) return row == TUNNEL_ROW;
+    if (col < 0 || col >= MAP_COLS) return row == GHOST_TUNNEL_ROW;
     return map[row][col] != TILE_WALL && map[row][col] != TILE_DOOR;
 }
 
-static int dist_sq(int c1, int r1, int c2, int r2) {
+int ghost_dist_sq(int c1, int r1, int c2, int r2) {
     int dc = c2 - c1;
     int dr = r2 - r1;
     return dc*dc + dr*dr;
@@ -58,7 +57,7 @@ static void choose_dir(Ghost *g, int tc, int tr) {
         int dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
         if (!ghost_can_enter(g->col + dc, g->row + dr)) continue;
-        int d = dist_sq(g->col + dc, g->row + dr, tc, tr);
+        int d = ghost_dist_sq(g->col + dc, g->row + dr, tc, tr);
         if (best_d < 0 || d < best_d) { best_d = d; best_dc = dc; best_dr = dr; }
     }
     // fallback: allow reversing if every other direction is blocked
@@ -90,8 +89,8 @@ static void choose_dir_random(Ghost *g) {
     }
 }
 
-static void get_target(const Ghost *g, const Player *player,
-                       const Ghost ghosts[GHOST_COUNT], int *tc, int *tr) {
+void ghost_get_target(const Ghost *g, const Player *player,
+                      const Ghost ghosts[GHOST_COUNT], int *tc, int *tr) {
     if (g->mode == GMODE_SCATTER) {
         *tc = g->scatter_col; *tr = g->scatter_row; return;
     }
@@ -113,7 +112,7 @@ static void get_target(const Ghost *g, const Player *player,
             break;
         }
         case GHOST_CLYDE:
-            if (dist_sq(g->col, g->row, player->col, player->row) > 64) {
+            if (ghost_dist_sq(g->col, g->row, player->col, player->row) > 64) {
                 *tc = player->col; *tr = player->row;
             } else {
                 *tc = g->scatter_col; *tr = g->scatter_row;
@@ -196,7 +195,7 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
             } else {
                 int tc;
                 int tr;
-                get_target(g, player, ghosts, &tc, &tr);
+                ghost_get_target(g, player, ghosts, &tc, &tr);
                 choose_dir(g, tc, tr);
             }
         }

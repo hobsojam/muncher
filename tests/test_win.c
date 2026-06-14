@@ -1,5 +1,5 @@
 #include "test_framework.h"
-#include "../src/map.c"
+#include "map.h"
 
 static void test_initial_dots_positive(void) {
     map_init();

@@ -15,7 +15,7 @@ endif
 
 SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c src/audio.c
 
-TESTCFLAGS  = -Wall -Itests/stubs -Isrc --coverage -fprofile-abs-path
+TESTCFLAGS  = -Wall -Itests/stubs -Isrc -DMUNCHER_TEST --coverage -fprofile-abs-path
 TEST_MAP    = tests/test_map
 TEST_PLAYER = tests/test_player
 TEST_GHOST  = tests/test_ghost
@@ -43,17 +43,17 @@ test: $(TEST_BINS)
 	./$(TEST_COLLISION)
 	./$(TEST_AUDIO)
 
-$(TEST_MAP): tests/test_map.c tests/test_framework.h tests/stubs/raylib.h src/map.c src/map.h
-	$(CC) tests/test_map.c -o $(TEST_MAP) $(TESTCFLAGS)
+$(TEST_MAP): tests/test_map.c tests/test_framework.h tests/stubs/raylib.h src/map.c src/map.h src/map_internal.h
+	$(CC) tests/test_map.c src/map.c -o $(TEST_MAP) $(TESTCFLAGS)
 
-$(TEST_PLAYER): tests/test_player.c tests/test_framework.h tests/stubs/raylib.h src/player.c src/player.h src/map.c src/map.h src/audio.c src/audio.h
-	$(CC) tests/test_player.c src/audio.c -o $(TEST_PLAYER) $(TESTCFLAGS)
+$(TEST_PLAYER): tests/test_player.c tests/test_framework.h tests/stubs/raylib.h src/player.c src/player.h src/player_internal.h src/map.c src/map.h src/audio.c src/audio.h
+	$(CC) tests/test_player.c src/player.c src/map.c src/audio.c -o $(TEST_PLAYER) $(TESTCFLAGS)
 
-$(TEST_GHOST): tests/test_ghost.c tests/test_framework.h tests/stubs/raylib.h src/ghost.c src/ghost.h src/map.c src/map.h src/player.h src/audio.c src/audio.h
-	$(CC) tests/test_ghost.c src/audio.c -o $(TEST_GHOST) $(TESTCFLAGS)
+$(TEST_GHOST): tests/test_ghost.c tests/test_framework.h tests/stubs/raylib.h src/ghost.c src/ghost.h src/ghost_internal.h src/map.c src/map.h src/player.h src/audio.c src/audio.h
+	$(CC) tests/test_ghost.c src/ghost.c src/map.c src/audio.c -o $(TEST_GHOST) $(TESTCFLAGS)
 
 $(TEST_WIN): tests/test_win.c tests/test_framework.h src/map.c src/map.h
-	$(CC) tests/test_win.c -o $(TEST_WIN) $(TESTCFLAGS)
+	$(CC) tests/test_win.c src/map.c -o $(TEST_WIN) $(TESTCFLAGS)
 
 $(TEST_LIVES): tests/test_lives.c tests/test_framework.h tests/stubs/raylib.h src/lives.c src/lives.h src/player.c src/player.h src/map.c src/map.h src/ghost.c src/ghost.h src/audio.c src/audio.h
 	$(CC) tests/test_lives.c src/lives.c src/player.c src/ghost.c src/map.c src/audio.c -o $(TEST_LIVES) $(TESTCFLAGS)
@@ -61,8 +61,8 @@ $(TEST_LIVES): tests/test_lives.c tests/test_framework.h tests/stubs/raylib.h sr
 $(TEST_COLLISION): tests/test_collision.c tests/test_framework.h tests/stubs/raylib.h src/collision.c src/collision.h src/player.c src/player.h src/ghost.c src/ghost.h src/map.c src/map.h src/audio.c src/audio.h
 	$(CC) tests/test_collision.c src/collision.c src/player.c src/ghost.c src/map.c src/audio.c -o $(TEST_COLLISION) $(TESTCFLAGS)
 
-$(TEST_AUDIO): tests/test_audio.c tests/test_framework.h tests/stubs/raylib.h src/audio.c src/audio.h
-	$(CC) tests/test_audio.c -o $(TEST_AUDIO) $(TESTCFLAGS)
+$(TEST_AUDIO): tests/test_audio.c tests/test_framework.h tests/stubs/raylib.h src/audio.c src/audio.h src/audio_internal.h
+	$(CC) tests/test_audio.c src/audio.c -o $(TEST_AUDIO) $(TESTCFLAGS)
 
 lint:
 	cppcheck --enable=all --error-exitcode=1 \
@@ -72,6 +72,7 @@ lint:
 		--suppress=normalCheckLevelMaxBranches \
 		--suppress=staticFunction \
 		--suppress=unusedFunction:src/map.c \
+		--suppress=unusedFunction:src/audio.c \
 		src/
 	flawfinder src/
 

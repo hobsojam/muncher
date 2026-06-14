@@ -1,4 +1,5 @@
 #include "map.h"
+#include "map_internal.h"
 #include "raylib.h"
 
 TileType map[MAP_ROWS][MAP_COLS];
@@ -11,7 +12,6 @@ TileType map[MAP_ROWS][MAP_COLS];
 
 #define CELL_ROWS 15
 #define CELL_COLS 13
-#define MAP_GENERATION_ATTEMPTS 20
 
 static int   s_vis[CELL_ROWS][CELL_COLS];
 static Color s_wall_color;
@@ -137,7 +137,7 @@ static void place_power_pellets(unsigned int *rng) {
     }
 }
 
-static int map_all_dots_reachable(void) {
+int map_all_dots_reachable(void) {
     static int seen[MAP_ROWS][MAP_COLS];
     static int qr[MAP_ROWS * MAP_COLS];
     static int qc[MAP_ROWS * MAP_COLS];
@@ -177,9 +177,7 @@ static int map_all_dots_reachable(void) {
     return 1;
 }
 
-typedef int (*MapValidator)(void);
-
-static int map_generate_with_validator(int level, MapValidator validator) {
+int map_generate_with_validator(int level, MapValidator validator) {
     TileType previous_map[MAP_ROWS][MAP_COLS];
     Color previous_wall_color = s_wall_color;
     for (int r = 0; r < MAP_ROWS; r++)
