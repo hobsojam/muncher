@@ -13,12 +13,9 @@ libraylib.def
 bw-output/
 
 # Test binaries and coverage data
-tests/test_map
-tests/test_player
-tests/test_ghost
-tests/test_map.exe
-tests/test_player.exe
-tests/test_ghost.exe
+tests/test_*
+!tests/test_*.c
+!tests/test_*.h
 *.gcno
 *.gcda
 *.gcov
