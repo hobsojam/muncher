@@ -111,6 +111,7 @@ int main(void) {
                         }
                     }
                     if (reset_ok) {
+                        int was_win = you_win;
                         ghosts_init(ghosts);
                         fruit_init(&fruit);
                         total_dots  = map_dots_remaining();
@@ -118,7 +119,7 @@ int main(void) {
                         game_over   = 0;
                         death_timer = 0.0f;
                         paused      = 0;
-                        state       = STATE_TITLE;
+                        state       = was_win ? STATE_PLAYING : STATE_TITLE;
                     }
                 }
             } else if (!paused) {
