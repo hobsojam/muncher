@@ -41,9 +41,11 @@ typedef struct {
     int       flash_row;
     float     release_timer;
     int       eat_score;
+    int       shy_radius;
 } Ghost;
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]);
+void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level);
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt);
 void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y);
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]);

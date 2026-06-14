@@ -18,6 +18,7 @@ int ghost_can_enter(int col, int row);
 int ghost_dist_sq(int c1, int r1, int c2, int r2);
 void ghost_get_target(const Ghost *g, const Player *player,
                       const Ghost ghosts[GHOST_COUNT], int *tc, int *tr);
+void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level);
 int ghost_frighten_flashing(float t);
 
 #ifdef MUNCHER_TEST
