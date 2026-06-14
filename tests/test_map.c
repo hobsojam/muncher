@@ -9,6 +9,25 @@ static int map_power_count(void) {
     return n;
 }
 
+static void copy_map(TileType dest[MAP_ROWS][MAP_COLS]) {
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            dest[r][c] = map[r][c];
+}
+
+static void assert_map_matches(TileType expected[MAP_ROWS][MAP_COLS]) {
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            TEST_ASSERT_EQUAL_INT(expected[r][c], map[r][c]);
+}
+
+static int validation_calls;
+
+static int always_reject_map(void) {
+    validation_calls++;
+    return 0;
+}
+
 static void test_corner_is_wall(void) {
     map_init();
     TEST_ASSERT_EQUAL_INT(TILE_WALL, map[0][0]);
@@ -33,17 +52,30 @@ static void test_all_dots_reachable(void) {
 }
 
 static void test_level_color_changes(void) {
-    map_generate(1);
+    TEST_ASSERT(map_generate(1));
     int dots_level1 = map_dots_remaining();
-    map_generate(6);
+    TEST_ASSERT(map_generate(6));
     int dots_level6 = map_dots_remaining();
     /* Different seeds should produce different dot counts (not guaranteed
        to differ every time, but levels 1 and 6 use different seeds). */
     (void)dots_level1; (void)dots_level6;
     /* At minimum, both levels produce solvable maps. */
-    map_generate(1);
+    TEST_ASSERT(map_generate(1));
     TEST_ASSERT(map_all_dots_reachable());
-    map_generate(6);
+    TEST_ASSERT(map_generate(6));
+    TEST_ASSERT(map_all_dots_reachable());
+}
+
+static void test_generate_failure_preserves_previous_map(void) {
+    TileType expected[MAP_ROWS][MAP_COLS];
+
+    TEST_ASSERT(map_generate(1));
+    copy_map(expected);
+    validation_calls = 0;
+
+    TEST_ASSERT_EQUAL_INT(0, map_generate_with_validator(3, always_reject_map));
+    TEST_ASSERT_EQUAL_INT(MAP_GENERATION_ATTEMPTS, validation_calls);
+    assert_map_matches(expected);
     TEST_ASSERT(map_all_dots_reachable());
 }
 
@@ -85,5 +117,6 @@ int main(void) {
     RUN_TEST(test_ghost_house_interior_empty);
     RUN_TEST(test_all_dots_reachable);
     RUN_TEST(test_level_color_changes);
+    RUN_TEST(test_generate_failure_preserves_previous_map);
     TESTS_SUMMARY();
 }
