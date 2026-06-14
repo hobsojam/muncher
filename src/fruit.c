@@ -1,6 +1,7 @@
 #include "fruit.h"
 #include "map.h"
 #include "raylib.h"
+#include "audio.h"
 
 #define FRUIT_SECS 8.0f
 #define FRUIT_SCORE 100
@@ -34,6 +35,7 @@ void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float
         p->score      += f->score;
         f->active      = 0;
         f->eaten       = 1;
+        audio_play_fruit_eat();
         return;
     }
     f->timer -= dt;
