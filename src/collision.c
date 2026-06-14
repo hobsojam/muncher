@@ -16,10 +16,8 @@ void handle_collision(Player *p, Ghost ghosts[]) {
     for (int i = 0; i < GHOST_COUNT; i++) {
         if (!player_on_ghost(p, &ghosts[i]) && !player_crossed_ghost(p, &ghosts[i])) continue;
         if (ghosts[i].mode == GMODE_FRIGHTENED) {
-            p->ghost_chain++;
-            int idx = p->ghost_chain - 1;
-            if (idx >= 4) idx = 3;
-            int score = CHAIN_SCORES[idx];
+            if (p->ghost_chain < 4) p->ghost_chain++;
+            int score = CHAIN_SCORES[p->ghost_chain - 1];
             ghosts[i].eat_score = score;
             p->score += score;
             ghost_respawn(&ghosts[i]);
