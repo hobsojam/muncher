@@ -21,15 +21,19 @@ typedef enum {
 
 typedef struct {
     GhostId   id;
-    int       col, row;
-    int       dir_col, dir_row;
+    int       col;
+    int       row;
+    int       dir_col;
+    int       dir_row;
     float     move_t;
     float     speed;
     GhostMode mode;
-    int       scatter_col, scatter_row;
+    int       scatter_col;
+    int       scatter_row;
     Color     color;
     float     flash_timer;
-    int       flash_col, flash_row;
+    int       flash_col;
+    int       flash_row;
 } Ghost;
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]);

@@ -38,18 +38,23 @@ static int ghost_can_enter(int col, int row) {
 }
 
 static int dist_sq(int c1, int r1, int c2, int r2) {
-    int dc = c2 - c1, dr = r2 - r1;
+    int dc = c2 - c1;
+    int dr = r2 - r1;
     return dc*dc + dr*dr;
 }
 
 // Pick the direction (no reversing) that minimises distance to (tc, tr).
 // Falls back to reversing if no other valid direction exists.
 static void choose_dir(Ghost *g, int tc, int tr) {
-    int rev_dc = -g->dir_col, rev_dr = -g->dir_row;
-    int best_dc = 0, best_dr = 0, best_d = -1;
+    int rev_dc = -g->dir_col;
+    int rev_dr = -g->dir_row;
+    int best_dc = 0;
+    int best_dr = 0;
+    int best_d = -1;
 
     for (int i = 0; i < 4; i++) {
-        int dc = DIRS[i][0], dr = DIRS[i][1];
+        int dc = DIRS[i][0];
+        int dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
         if (!ghost_can_enter(g->col + dc, g->row + dr)) continue;
         int d = dist_sq(g->col + dc, g->row + dr, tc, tr);
@@ -65,12 +70,14 @@ static void choose_dir(Ghost *g, int tc, int tr) {
 
 // Pick a random valid direction (no reversing) — used when frightened.
 static void choose_dir_random(Ghost *g) {
-    int rev_dc = -g->dir_col, rev_dr = -g->dir_row;
+    int rev_dc = -g->dir_col;
+    int rev_dr = -g->dir_row;
     int valid[4][2];
     int n = 0;
 
     for (int i = 0; i < 4; i++) {
-        int dc = DIRS[i][0], dr = DIRS[i][1];
+        int dc = DIRS[i][0];
+        int dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
         if (!ghost_can_enter(g->col + dc, g->row + dr)) continue;
         valid[n][0] = dc; valid[n][1] = dr; n++;
@@ -98,7 +105,8 @@ static void get_target(const Ghost *g, const Player *player,
         case GHOST_INKY: {
             int ref_c = player->col + player->dir_col * 2;
             int ref_r = player->row + player->dir_row * 2;
-            int bc = ghosts[GHOST_BLINKY].col, br = ghosts[GHOST_BLINKY].row;
+            int bc = ghosts[GHOST_BLINKY].col;
+            int br = ghosts[GHOST_BLINKY].row;
             *tc = ref_c + (ref_c - bc);
             *tr = ref_r + (ref_r - br);
             break;
@@ -179,7 +187,8 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
             if (g->mode == GMODE_FRIGHTENED) {
                 choose_dir_random(g);
             } else {
-                int tc, tr;
+                int tc;
+                int tr;
                 get_target(g, player, ghosts, &tc, &tr);
                 choose_dir(g, tc, tr);
             }
@@ -203,7 +212,8 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
 
         // Eyes (hidden when frightened)
         if (g->mode != GMODE_FRIGHTENED) {
-            int ex1 = (int)(px - r * 0.35f), ex2 = (int)(px + r * 0.35f);
+            int ex1 = (int)(px - r * 0.35f);
+            int ex2 = (int)(px + r * 0.35f);
             int ey  = (int)(py - r * 0.4f);
             DrawCircle(ex1, ey, 3, WHITE);
             DrawCircle(ex2, ey, 3, WHITE);
