@@ -53,8 +53,18 @@ int main(void) {
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
-        if (!you_win && !game_over)
+        if (you_win || game_over) {
+            if (IsKeyPressed(KEY_R)) {
+                map_init();
+                player_init(&player);
+                ghosts_init(ghosts);
+                you_win     = 0;
+                game_over   = 0;
+                death_timer = 0.0f;
+            }
+        } else {
             game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
+        }
 
         BeginDrawing();
             ClearBackground(BLACK);
@@ -65,14 +75,17 @@ int main(void) {
             if (!player.dead || (int)(death_timer * 6) % 2)
                 player_draw(&player, 0, MAP_OFFSET_Y);
             ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
-            if (you_win)
+            if (you_win) {
                 DrawText("YOU WIN!", SCREEN_W / 2 - 80, SCREEN_H / 2 - 20, 40, YELLOW);
+                DrawText("Press R to play again", SCREEN_W / 2 - 110, SCREEN_H / 2 + 30, 20, WHITE);
+            }
             if (game_over) {
                 int text_w = MeasureText("GAME OVER", 40);
                 DrawText("GAME OVER",
                          (SCREEN_W - text_w) / 2,
                          SCREEN_H / 2 - 20,
                          40, RED);
+                DrawText("Press R to play again", SCREEN_W / 2 - 110, SCREEN_H / 2 + 30, 20, WHITE);
             }
         EndDrawing();
     }

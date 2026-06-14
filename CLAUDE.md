@@ -9,8 +9,9 @@ See [CLAUDE_SECURITY.md](CLAUDE_SECURITY.md) for security constraints that **MUS
 
 ```sh
 make              # compile muncher.exe
+make test         # build and run all unit tests — REQUIRED before commit
 make lint         # run cppcheck + flawfinder static analysis — REQUIRED before commit
-make clean        # remove muncher.exe
+make clean        # remove muncher.exe and test binaries
 ./muncher.exe     # run the game
 ```
 
@@ -18,10 +19,19 @@ make clean        # remove muncher.exe
 
 ## Testing
 
-There is no automated test suite. Verify changes by running `./muncher.exe` and manually testing:
-- Player moves in all four directions with arrow keys
-- Player stops at walls and eats dots on contact
-- `make lint` passes with no errors
+Use TDD for all new logic: write the failing test first, then implement until it passes.
+
+Unit tests live in `tests/`. Each test file includes only `.h` headers (via `-Isrc`) and
+lists the `.c` source files it needs as separate compilation units in the Makefile rule —
+this ensures gcov records absolute paths so lcov coverage reporting works correctly.
+
+Stub headers for raylib live in `tests/stubs/raylib.h` (no-op draw functions, no window).
+
+```sh
+make test         # runs all test binaries; each prints N/N passed
+```
+
+Verify new features manually with `./muncher.exe` after the test suite passes.
 
 ## Architecture
 
@@ -43,4 +53,5 @@ exact location. Toolchain: w64devkit MinGW-w64 GCC.
 - C99, no C++ features
 - All game state passed explicitly — no globals except compile-time constants
 - Grid coordinates are integer tile indices; pixel coordinates are floats
-- **IMPORTANT:** Run `make lint` before every commit
+- **TDD:** Write the test first, make it fail, then implement. New logic without a test is not done.
+- **IMPORTANT:** Run `make test && make lint` before every commit
