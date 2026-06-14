@@ -6,7 +6,7 @@ A Pac-Man clone built in C with [raylib](https://www.raylib.com/).
 
 - Eat all dots to clear the maze
 - Power pellets (large dots) turn ghosts blue — eat them for bonus points
-- Avoid ghosts in normal mode or you die
+- Avoid ghosts in normal mode; you have 3 lives before game over
 
 ### Controls
 
@@ -20,6 +20,7 @@ A Pac-Man clone built in C with [raylib](https://www.raylib.com/).
 |------|--------|
 | Dot | 1 |
 | Power pellet | 10 |
+| Frightened ghost | 200 |
 
 ## Building
 
@@ -44,6 +45,12 @@ make
 ./muncher.exe
 ```
 
+### Test
+
+```sh
+make test
+```
+
 ### Lint
 
 ```sh
@@ -54,10 +61,15 @@ make lint
 
 ```text
 src/
-  main.c       # entry point and game loop
-  map.h/map.c  # tile grid, map data, rendering
-  player.h/.c  # player movement and input
-  ghost.h/.c   # ghost AI (scatter, chase, frightened modes)
+  main.c          # entry point and game loop
+  map.h/map.c     # tile grid, map data, rendering
+  player.h/.c     # player movement and input
+  ghost.h/.c      # ghost AI (scatter, chase, frightened modes)
+  lives.h/.c      # life decrement, respawn, game over
+  collision.h/.c  # ghost collision detection and scoring
+tests/
+  test_*.c        # unit tests (custom framework, no dependencies)
+  stubs/raylib.h  # no-op raylib stubs for headless test builds
 Makefile
 ```
 
@@ -76,5 +88,6 @@ Ghosts alternate between scatter mode (retreating to corners) and chase mode on 
 
 GitHub Actions runs on every push and pull request:
 - Compiles the game on Ubuntu
+- Runs all unit tests
 - Runs cppcheck and flawfinder
-- Runs SonarCloud static analysis
+- Runs SonarCloud static analysis with coverage reporting
