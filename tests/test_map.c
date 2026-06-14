@@ -1,6 +1,14 @@
 #include "test_framework.h"
 #include "../src/map.c"
 
+static int map_power_count(void) {
+    int n = 0;
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            if (map[r][c] == TILE_POWER) n++;
+    return n;
+}
+
 static void test_corner_is_wall(void) {
     map_init();
     TEST_ASSERT_EQUAL_INT(TILE_WALL, map[0][0]);

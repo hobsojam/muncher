@@ -127,14 +127,6 @@ static void place_power_pellets(unsigned int *rng) {
     }
 }
 
-static int map_power_count(void) {
-    int n = 0;
-    for (int r = 0; r < MAP_ROWS; r++)
-        for (int c = 0; c < MAP_COLS; c++)
-            if (map[r][c] == TILE_POWER) n++;
-    return n;
-}
-
 static int map_all_dots_reachable(void) {
     static int seen[MAP_ROWS][MAP_COLS];
     static int qr[MAP_ROWS * MAP_COLS];

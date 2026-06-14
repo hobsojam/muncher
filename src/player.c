@@ -1,6 +1,7 @@
 #include "player.h"
 #include "map.h"
 #include "raylib.h"
+#include "audio.h"
 
 #define PLAYER_START_COL 14
 #define PLAYER_START_ROW 29
@@ -71,10 +72,12 @@ void player_update(Player *p, float dt) {
         if (map[p->row][p->col] == TILE_DOT) {
             map[p->row][p->col] = TILE_EMPTY;
             p->score += 1;
+            audio_play_chomp();
         } else if (map[p->row][p->col] == TILE_POWER) {
             map[p->row][p->col] = TILE_EMPTY;
             p->score    += 10;
             p->ate_power = 1;
+            audio_play_power();
         }
 
         if (can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {

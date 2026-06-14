@@ -2,6 +2,7 @@
 #include "player.h"
 #include "map.h"
 #include "raylib.h"
+#include "audio.h"
 #include <stdlib.h>
 
 #define SPEED_NORMAL     6.5f
@@ -223,7 +224,7 @@ void ghost_respawn(Ghost *g) {
     g->flash_col   = g->col;
     g->flash_row   = g->row;
     g->flash_timer = 0.8f;
-    /* TODO: play an eat-ghost sound here — see raylib InitAudioDevice + PlaySound */
+    audio_play_ghost_eat();
     switch (g->id) {
         case GHOST_BLINKY: g->col =  9; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
         case GHOST_PINKY:  g->col = 18; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
