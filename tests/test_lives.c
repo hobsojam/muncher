@@ -1,8 +1,8 @@
 #include "test_framework.h"
-#include "../src/map.c"
-#include "../src/ghost.c"
-#include "../src/player.c"
-#include "../src/lives.c"
+#include "map.h"
+#include "ghost.h"
+#include "player.h"
+#include "lives.h"
 
 /* ------------------------------------------------------------------ */
 /* player_init / player_respawn                                        */

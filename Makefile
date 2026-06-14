@@ -48,7 +48,7 @@ $(TEST_WIN): tests/test_win.c tests/test_framework.h src/map.c src/map.h
 	$(CC) tests/test_win.c -o $(TEST_WIN) $(TESTCFLAGS)
 
 $(TEST_LIVES): tests/test_lives.c tests/test_framework.h tests/stubs/raylib.h src/lives.c src/lives.h src/player.c src/player.h src/map.c src/map.h src/ghost.c src/ghost.h
-	$(CC) tests/test_lives.c -o $(TEST_LIVES) $(TESTCFLAGS)
+	$(CC) tests/test_lives.c src/lives.c src/player.c src/ghost.c src/map.c -o $(TEST_LIVES) $(TESTCFLAGS)
 
 lint:
 	cppcheck --enable=all --error-exitcode=1 \
