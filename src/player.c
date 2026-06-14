@@ -30,6 +30,7 @@ void player_init(Player *p) {
     p->score     = 0;
     p->ate_power = 0;
     p->lives     = 3;
+    p->dead      = 0;
     map[p->row][p->col] = TILE_EMPTY;
 }
 

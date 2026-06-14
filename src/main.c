@@ -3,6 +3,7 @@
 #include "player.h"
 #include "ghost.h"
 #include "lives.h"
+#include "collision.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -33,6 +34,7 @@ int main(void) {
             player_update(&player, dt);
             if (player.ate_power) ghosts_frighten(ghosts);
             ghosts_update(ghosts, &player, dt);
+            handle_collision(&player, ghosts);
             handle_ghost_collision(&player, ghosts, &game_over);
             if (map_dots_remaining() == 0) you_win = 1;
         }

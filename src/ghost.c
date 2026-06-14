@@ -204,6 +204,18 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
     }
 }
 
+void ghost_respawn(Ghost *g) {
+    switch (g->id) {
+        case GHOST_BLINKY: g->col =  9; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
+        case GHOST_PINKY:  g->col = 18; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
+        case GHOST_INKY:   g->col = 11; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
+        case GHOST_CLYDE:  g->col = 16; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
+    }
+    g->move_t = 0.0f;
+    g->speed  = SPEED_NORMAL;
+    g->mode   = global_mode;
+}
+
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]) {
     fright_timer = FRIGHTENED_SECS;
     for (int i = 0; i < GHOST_COUNT; i++) {

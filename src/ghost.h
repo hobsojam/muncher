@@ -34,5 +34,6 @@ void ghosts_init(Ghost ghosts[GHOST_COUNT]);
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt);
 void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y);
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]);
+void ghost_respawn(Ghost *g);
 
 #endif
