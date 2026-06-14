@@ -9,9 +9,11 @@ typedef struct {
     float speed;
     int score;
     int ate_power;  // set to 1 for one frame when a power pellet is eaten
+    int lives;
 } Player;
 
 void player_init(Player *p);
+void player_respawn(Player *p);
 void player_update(Player *p, float dt);
 void player_draw(const Player *p, int offset_x, int offset_y);
 
