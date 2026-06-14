@@ -48,6 +48,13 @@ static inline void RaylibStubResetAudio(void) {
 #define KEY_P       80
 #define KEY_F11    300
 
+#define FLAG_WINDOW_RESIZABLE 0x00000004
+
+static inline void SetWindowState(unsigned int flags) { (void)flags; }
+static inline int  IsWindowMaximized(void)            { return 0; }
+static inline void RestoreWindow(void)                {}
+static inline void ToggleFullscreen(void)             {}
+
 static inline void DrawRectangle(int x, int y, int w, int h, Color c)
     { (void)x;(void)y;(void)w;(void)h;(void)c; }
 static inline void DrawCircle(int cx, int cy, float r, Color c)

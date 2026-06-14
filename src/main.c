@@ -42,6 +42,7 @@ static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
 
 int main(void) {
     InitWindow(SCREEN_W, SCREEN_H, "Muncher");
+    SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(60);
     audio_init();
     srand((unsigned)time(NULL));
@@ -73,7 +74,10 @@ int main(void) {
         float dt = GetFrameTime();
         audio_update();
 
-        if (IsKeyPressed(KEY_F11)) ToggleFullscreen();
+        if (IsKeyPressed(KEY_F11) || IsWindowMaximized()) {
+            if (IsWindowMaximized()) RestoreWindow();
+            ToggleFullscreen();
+        }
 
         if (state == STATE_TITLE) {
             if (IsKeyPressed(KEY_ENTER)) {
