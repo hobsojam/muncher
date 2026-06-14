@@ -41,7 +41,11 @@ int main(void) {
     srand((unsigned)time(NULL));
 
     static int level = 1;
-    map_generate(level);
+    if (!map_generate(level)) {
+        audio_close();
+        CloseWindow();
+        return 1;
+    }
 
     Player player;
     player_init(&player);
@@ -66,19 +70,27 @@ int main(void) {
 
         if (you_win || game_over) {
             if (IsKeyPressed(KEY_R)) {
+                int reset_ok = 0;
                 if (you_win) {
-                    level++;
-                    map_generate(level);
-                    player_respawn(&player);
+                    int next_level = level + 1;
+                    if (map_generate(next_level)) {
+                        level = next_level;
+                        player_respawn(&player);
+                        reset_ok = 1;
+                    }
                 } else {
-                    level = 1;
-                    map_generate(level);
-                    player_init(&player);
+                    if (map_generate(1)) {
+                        level = 1;
+                        player_init(&player);
+                        reset_ok = 1;
+                    }
                 }
-                ghosts_init(ghosts);
-                you_win     = 0;
-                game_over   = 0;
-                death_timer = 0.0f;
+                if (reset_ok) {
+                    ghosts_init(ghosts);
+                    you_win     = 0;
+                    game_over   = 0;
+                    death_timer = 0.0f;
+                }
             }
         } else {
             game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);

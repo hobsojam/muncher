@@ -6,6 +6,7 @@
 #define PLAYER_START_COL 14
 #define PLAYER_START_ROW 29
 #define PLAYER_SPEED     8.0f
+#define MAX_TILE_STEPS_PER_UPDATE 8
 
 #define TUNNEL_ROW 14
 
@@ -69,7 +70,8 @@ void player_update(Player *p, float dt) {
     }
 
     p->move_t += p->speed * dt;
-    if (p->move_t >= 1.0f) {
+    int steps = 0;
+    while (p->move_t >= 1.0f && steps < MAX_TILE_STEPS_PER_UPDATE) {
         p->move_t -= 1.0f;
         p->prev_col = p->col;
         p->prev_row = p->row;
@@ -77,6 +79,7 @@ void player_update(Player *p, float dt) {
         p->row += p->dir_row;
         p->col = wrap_col(p->col);
         p->moved = 1;
+        steps++;
 
         p->ate_power = 0;
         if (map[p->row][p->col] == TILE_DOT) {
@@ -97,7 +100,12 @@ void player_update(Player *p, float dt) {
             p->dir_col = 0;
             p->dir_row = 0;
             p->move_t = 0.0f;
+            break;
         }
+    }
+
+    if (p->move_t >= 1.0f) {
+        p->move_t = 0.0f;
     }
 }
 

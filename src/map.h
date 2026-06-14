@@ -15,7 +15,7 @@ typedef enum {
 
 extern TileType map[MAP_ROWS][MAP_COLS];
 
-void map_generate(int level);
+int  map_generate(int level);
 void map_init(void);
 void map_draw(int offset_x, int offset_y);
 int  map_dots_remaining(void);

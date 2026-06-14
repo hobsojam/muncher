@@ -11,6 +11,7 @@ TileType map[MAP_ROWS][MAP_COLS];
 
 #define CELL_ROWS 15
 #define CELL_COLS 13
+#define MAP_GENERATION_ATTEMPTS 20
 
 static int   s_vis[CELL_ROWS][CELL_COLS];
 static Color s_wall_color;
@@ -176,11 +177,19 @@ static int map_all_dots_reachable(void) {
     return 1;
 }
 
-void map_generate(int level) {
+typedef int (*MapValidator)(void);
+
+static int map_generate_with_validator(int level, MapValidator validator) {
+    TileType previous_map[MAP_ROWS][MAP_COLS];
+    Color previous_wall_color = s_wall_color;
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            previous_map[r][c] = map[r][c];
+
     s_wall_color = WALL_PALETTE[((level - 1) / 5) % PALETTE_SIZE];
     unsigned int rng = (unsigned int)level * 2654435761u;
 
-    for (int attempt = 0; attempt < 20; attempt++) {
+    for (int attempt = 0; attempt < MAP_GENERATION_ATTEMPTS; attempt++) {
         for (int r = 0; r < MAP_ROWS; r++)
             for (int c = 0; c < MAP_COLS; c++)
                 map[r][c] = TILE_WALL;
@@ -206,12 +215,22 @@ void map_generate(int level) {
         stamp_tunnel();
         place_power_pellets(&rng);
 
-        if (map_all_dots_reachable()) return;
+        if (validator()) return 1;
         rng = rng * 1664525u + 1013904223u;
     }
+
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            map[r][c] = previous_map[r][c];
+    s_wall_color = previous_wall_color;
+    return 0;
 }
 
-void map_init(void) { map_generate(1); }
+int map_generate(int level) {
+    return map_generate_with_validator(level, map_all_dots_reachable);
+}
+
+void map_init(void) { (void)map_generate(1); }
 
 /* ------------------------------------------------------------------ */
 

@@ -8,6 +8,7 @@
 #define SPEED_NORMAL     6.5f
 #define SPEED_FRIGHTENED 4.0f
 #define FRIGHTENED_SECS  8.0f
+#define MAX_TILE_STEPS_PER_UPDATE 8
 
 // Mode schedule: alternating scatter/chase, then permanent chase
 static const float      MODE_DURATIONS[] = { 7.0f, 20.0f, 7.0f, 20.0f, 5.0f, 20.0f, 5.0f, 99999.0f };
@@ -179,7 +180,8 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
         g->moved = 0;
         g->move_t += g->speed * dt;
 
-        if (g->move_t >= 1.0f) {
+        int steps = 0;
+        while (g->move_t >= 1.0f && steps < MAX_TILE_STEPS_PER_UPDATE) {
             g->move_t -= 1.0f;
             g->prev_col = g->col;
             g->prev_row = g->row;
@@ -187,6 +189,7 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
             g->row += g->dir_row;
             g->col = ghost_wrap_col(g->col);
             g->moved = 1;
+            steps++;
 
             if (g->mode == GMODE_FRIGHTENED) {
                 choose_dir_random(g);
@@ -196,6 +199,10 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
                 get_target(g, player, ghosts, &tc, &tr);
                 choose_dir(g, tc, tr);
             }
+        }
+
+        if (g->move_t >= 1.0f) {
+            g->move_t = 0.0f;
         }
     }
 }
