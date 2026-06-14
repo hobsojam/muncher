@@ -158,6 +158,7 @@ static void test_scatter_ghost_overrides_score(void) {
 }
 
 static void test_two_frightened_ghosts_score(void) {
+    /* Chain: first ghost = 200, second ghost = 400 → total 600 */
     map_init();
     Player p; player_init(&p);
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
@@ -166,7 +167,43 @@ static void test_two_frightened_ghosts_score(void) {
     ghosts[GHOST_PINKY].mode = GMODE_FRIGHTENED;
     ghosts[GHOST_PINKY].col = p.col; ghosts[GHOST_PINKY].row = p.row;
     handle_collision(&p, ghosts);
-    TEST_ASSERT_EQUAL_INT(400, p.score);
+    TEST_ASSERT_EQUAL_INT(600, p.score);
+}
+
+static void test_chain_score_increments(void) {
+    map_init();
+    Player p; player_init(&p);
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].mode = GMODE_FRIGHTENED;
+    ghosts[GHOST_BLINKY].col = p.col; ghosts[GHOST_BLINKY].row = p.row;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(200, p.score);
+    TEST_ASSERT_EQUAL_INT(1, p.ghost_chain);
+    ghosts[GHOST_PINKY].mode = GMODE_FRIGHTENED;
+    ghosts[GHOST_PINKY].col = p.col; ghosts[GHOST_PINKY].row = p.row;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(600, p.score);
+    TEST_ASSERT_EQUAL_INT(2, p.ghost_chain);
+}
+
+static void test_house_ghost_no_kill(void) {
+    map_init();
+    Player p; player_init(&p);
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].mode = GMODE_HOUSE;
+    ghosts[GHOST_BLINKY].col = p.col; ghosts[GHOST_BLINKY].row = p.row;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(0, p.dead);
+}
+
+static void test_exiting_ghost_no_kill(void) {
+    map_init();
+    Player p; player_init(&p);
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].mode = GMODE_EXITING;
+    ghosts[GHOST_BLINKY].col = p.col; ghosts[GHOST_BLINKY].row = p.row;
+    handle_collision(&p, ghosts);
+    TEST_ASSERT_EQUAL_INT(0, p.dead);
 }
 
 /* ------------------------------------------------------------------ */
@@ -193,6 +230,9 @@ int main(void) {
     RUN_TEST(test_crossing_frightened_ghost_adds_score);
     RUN_TEST(test_scatter_ghost_overrides_score);
     RUN_TEST(test_two_frightened_ghosts_score);
+    RUN_TEST(test_chain_score_increments);
+    RUN_TEST(test_house_ghost_no_kill);
+    RUN_TEST(test_exiting_ghost_no_kill);
     RUN_TEST(test_player_init_dead_zero);
     TESTS_SUMMARY();
 }

@@ -297,7 +297,7 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
         if (g->flash_timer > 0.0f) {
             int fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
             int fy = (int)((float)g->flash_row * TILE_SIZE) + offset_y - 4;
-            DrawText("+200", fx, fy, 14, WHITE);
+            DrawText(TextFormat("+%d", g->eat_score), fx, fy, 14, WHITE);
         }
     }
 }
