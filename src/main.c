@@ -15,16 +15,24 @@
 #define GAME_H            (MAP_ROWS * TILE_SIZE + 60)
 #define MAP_OFFSET_Y      60
 #define DEATH_FREEZE_SECS 1.5f
+#define READY_SECS        2.0f
 
 typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
 
 static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
-                        float dt, float *death_timer, int *game_over, int *you_win) {
+                        float dt, float *death_timer, float *ready_timer,
+                        int *game_over, int *you_win) {
+    if (*ready_timer > 0.0f) {
+        *ready_timer -= dt;
+        if (*ready_timer < 0.0f) *ready_timer = 0.0f;
+        return;
+    }
     if (*death_timer > 0.0f) {
         *death_timer -= dt;
         if (*death_timer <= 0.0f) {
             *death_timer = 0.0f;
             handle_ghost_collision(p, ghosts, game_over);
+            if (!*game_over) *ready_timer = READY_SECS;
         }
         return;
     }
@@ -87,6 +95,7 @@ int main(void) {
     int       you_win     = 0;
     int       game_over   = 0;
     float     death_timer = 0.0f;
+    float     ready_timer = READY_SECS;
     int       paused      = 0;
     GameState state       = STATE_TITLE;
 
@@ -144,13 +153,14 @@ int main(void) {
                         you_win     = 0;
                         game_over   = 0;
                         death_timer = 0.0f;
+                        ready_timer = READY_SECS;
                         paused      = 0;
                         state       = was_win ? STATE_PLAYING : STATE_TITLE;
                     }
                 }
             } else if (!paused) {
                 game_update(&player, ghosts, &fruit, total_dots, dt,
-                            &death_timer, &game_over, &you_win);
+                            &death_timer, &ready_timer, &game_over, &you_win);
             }
         }
 
@@ -192,6 +202,11 @@ int main(void) {
                     int tw = MeasureText("PAUSED", 36);
                     DrawText("PAUSED",
                              (GAME_W - tw) / 2, GAME_H / 2 - 18, 36, WHITE);
+                }
+                if (ready_timer > 0.0f && !you_win && !game_over) {
+                    int tw = MeasureText("READY!", 40);
+                    DrawText("READY!",
+                             (GAME_W - tw) / 2, GAME_H / 2 - 20, 40, YELLOW);
                 }
             }
         EndTextureMode();
