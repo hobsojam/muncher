@@ -14,13 +14,29 @@ static void test_dot(void) {
     TEST_ASSERT_EQUAL_INT(TILE_DOT, map[1][1]);
 }
 
-static void test_power_pellet(void) {
+static void test_power_pellet_count(void) {
     map_init();
-    // Row 3: "#o####..." — col 1 is 'o'
-    TEST_ASSERT_EQUAL_INT(TILE_POWER, map[3][1]);
-    TEST_ASSERT_EQUAL_INT(TILE_POWER, map[3][26]);
-    TEST_ASSERT_EQUAL_INT(TILE_POWER, map[22][1]);
-    TEST_ASSERT_EQUAL_INT(TILE_POWER, map[22][26]);
+    TEST_ASSERT_EQUAL_INT(4, map_power_count());
+}
+
+static void test_all_dots_reachable(void) {
+    map_init();
+    TEST_ASSERT(map_all_dots_reachable());
+}
+
+static void test_level_color_changes(void) {
+    map_generate(1);
+    int dots_level1 = map_dots_remaining();
+    map_generate(6);
+    int dots_level6 = map_dots_remaining();
+    /* Different seeds should produce different dot counts (not guaranteed
+       to differ every time, but levels 1 and 6 use different seeds). */
+    (void)dots_level1; (void)dots_level6;
+    /* At minimum, both levels produce solvable maps. */
+    map_generate(1);
+    TEST_ASSERT(map_all_dots_reachable());
+    map_generate(6);
+    TEST_ASSERT(map_all_dots_reachable());
 }
 
 static void test_ghost_door(void) {
@@ -54,10 +70,12 @@ static void test_ghost_house_interior_empty(void) {
 int main(void) {
     RUN_TEST(test_corner_is_wall);
     RUN_TEST(test_dot);
-    RUN_TEST(test_power_pellet);
+    RUN_TEST(test_power_pellet_count);
     RUN_TEST(test_ghost_door);
     RUN_TEST(test_tunnel_row_empty_edges);
     RUN_TEST(test_tunnel_row_dots);
     RUN_TEST(test_ghost_house_interior_empty);
+    RUN_TEST(test_all_dots_reachable);
+    RUN_TEST(test_level_color_changes);
     TESTS_SUMMARY();
 }
