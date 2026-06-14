@@ -13,6 +13,8 @@
 #define MAP_OFFSET_Y      40
 #define DEATH_FREEZE_SECS 1.5f
 
+typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
+
 static void game_update(Player *p, Ghost ghosts[], float dt,
                         float *death_timer, int *game_over, int *you_win) {
     if (*death_timer > 0.0f) {
@@ -53,83 +55,101 @@ int main(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
 
-    int   you_win     = 0;
-    int   game_over   = 0;
-    float death_timer = 0.0f;
-    int   paused      = 0;
+    int       you_win     = 0;
+    int       game_over   = 0;
+    float     death_timer = 0.0f;
+    int       paused      = 0;
+    GameState state       = STATE_TITLE;
 
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
         audio_update();
 
-        if (IsKeyPressed(KEY_M)) audio_toggle_music_mute();
-        if (IsKeyPressed(KEY_N)) audio_toggle_sfx_mute();
-        if (IsKeyPressed(KEY_LEFT_BRACKET))  audio_step_music_volume(-0.1f);
-        if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
-        if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
-        if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
-
-        if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
-            paused = !paused;
-            if (paused) audio_pause(); else audio_resume();
-        }
-
-        if (you_win || game_over) {
-            if (IsKeyPressed(KEY_R)) {
-                int reset_ok = 0;
-                if (you_win) {
-                    int next_level = level + 1;
-                    if (map_generate(next_level)) {
-                        level = next_level;
-                        player_respawn(&player);
-                        reset_ok = 1;
-                    }
-                } else {
-                    if (map_generate(1)) {
-                        level = 1;
-                        player_init(&player);
-                        reset_ok = 1;
-                    }
-                }
-                if (reset_ok) {
-                    ghosts_init(ghosts);
-                    you_win     = 0;
-                    game_over   = 0;
-                    death_timer = 0.0f;
-                    paused      = 0;
-                }
+        if (state == STATE_TITLE) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                state = STATE_PLAYING;
             }
-        } else if (!paused) {
-            game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
+        } else {
+            if (IsKeyPressed(KEY_M)) audio_toggle_music_mute();
+            if (IsKeyPressed(KEY_N)) audio_toggle_sfx_mute();
+            if (IsKeyPressed(KEY_LEFT_BRACKET))  audio_step_music_volume(-0.1f);
+            if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
+            if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
+            if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
+
+            if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
+                paused = !paused;
+                if (paused) audio_pause(); else audio_resume();
+            }
+
+            if (you_win || game_over) {
+                if (IsKeyPressed(KEY_R)) {
+                    int reset_ok = 0;
+                    if (you_win) {
+                        int next_level = level + 1;
+                        if (map_generate(next_level)) {
+                            level = next_level;
+                            player_respawn(&player);
+                            reset_ok = 1;
+                        }
+                    } else {
+                        if (map_generate(1)) {
+                            level = 1;
+                            player_init(&player);
+                            reset_ok = 1;
+                        }
+                    }
+                    if (reset_ok) {
+                        ghosts_init(ghosts);
+                        you_win     = 0;
+                        game_over   = 0;
+                        death_timer = 0.0f;
+                        paused      = 0;
+                        state       = STATE_TITLE;
+                    }
+                }
+            } else if (!paused) {
+                game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
+            }
         }
 
         BeginDrawing();
             ClearBackground(BLACK);
-            DrawText("MUNCHER", 10, 10, 20, YELLOW);
-            DrawText(TextFormat("SCORE: %d",  player.score), 130, 10, 20, WHITE);
-            DrawText(TextFormat("LIVES: %d",  player.lives), 300, 10, 20, WHITE);
-            DrawText(TextFormat("LEVEL: %d",  level),        430, 10, 20, WHITE);
-            map_draw(0, MAP_OFFSET_Y);
-            if (!player.dead || (int)(death_timer * 6) % 2)
-                player_draw(&player, 0, MAP_OFFSET_Y);
-            ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
-            if (you_win) {
-                int tw = MeasureText("LEVEL CLEAR!", 36);
-                DrawText("LEVEL CLEAR!",
-                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 28, 36, YELLOW);
-                DrawText("Press R for next level",
-                         SCREEN_W / 2 - 115, SCREEN_H / 2 + 18, 20, WHITE);
-            }
-            if (game_over) {
-                int tw = MeasureText("GAME OVER", 40);
-                DrawText("GAME OVER",
-                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 20, 40, RED);
-                DrawText("Press R to restart",
-                         SCREEN_W / 2 - 95, SCREEN_H / 2 + 30, 20, WHITE);
-            }
-            if (paused) {
-                int tw = MeasureText("PAUSED", 36);
-                DrawText("PAUSED", (SCREEN_W - tw) / 2, SCREEN_H / 2 - 18, 36, WHITE);
+            if (state == STATE_TITLE) {
+                int tw = MeasureText("MUNCHER", 60);
+                DrawText("MUNCHER",
+                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 50, 60, YELLOW);
+                tw = MeasureText("Press ENTER to start", 24);
+                DrawText("Press ENTER to start",
+                         (SCREEN_W - tw) / 2, SCREEN_H / 2 + 20, 24, WHITE);
+            } else {
+                DrawText("MUNCHER", 10, 10, 20, YELLOW);
+                DrawText(TextFormat("SCORE: %d",  player.score), 130, 10, 20, WHITE);
+                DrawText(TextFormat("LIVES: %d",  player.lives), 300, 10, 20, WHITE);
+                DrawText(TextFormat("LEVEL: %d",  level),        430, 10, 20, WHITE);
+                map_draw(0, MAP_OFFSET_Y);
+                if (!player.dead || (int)(death_timer * 6) % 2)
+                    player_draw(&player, 0, MAP_OFFSET_Y);
+                ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
+                if (you_win) {
+                    int tw = MeasureText("LEVEL CLEAR!", 36);
+                    DrawText("LEVEL CLEAR!",
+                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 28, 36, YELLOW);
+                    DrawText("Press R for next level",
+                             SCREEN_W / 2 - 115, SCREEN_H / 2 + 18, 20, WHITE);
+                }
+                if (game_over) {
+                    int tw = MeasureText("GAME OVER", 40);
+                    DrawText("GAME OVER",
+                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 20, 40, RED);
+                    DrawText("Press R to restart",
+                             SCREEN_W / 2 - 95, SCREEN_H / 2 + 30, 20, WHITE);
+                }
+                if (paused) {
+                    int tw = MeasureText("PAUSED", 36);
+                    DrawText("PAUSED",
+                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 18, 36, WHITE);
+                }
             }
         EndDrawing();
     }
