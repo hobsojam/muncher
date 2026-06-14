@@ -120,6 +120,38 @@ static void test_fruit_no_respawn_after_eaten(void) {
     TEST_ASSERT_EQUAL_INT(0, f.active);
 }
 
+/* ------------------------------------------------------------------ */
+/* fruit_update — score popup                                           */
+/* ------------------------------------------------------------------ */
+
+static void test_fruit_popup_timer_set_on_eat(void) {
+    map_init();
+    Fruit f; fruit_init(&f);
+    Player p; player_init(&p);
+    f.active = 1;
+    p.col = f.col; p.row = f.row;
+    fruit_update(&f, &p, 0, 100, 0.0f);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
+static void test_fruit_popup_timer_ticks_down(void) {
+    map_init();
+    Fruit f; fruit_init(&f);
+    Player p; player_init(&p);
+    f.active = 1;
+    p.col = f.col; p.row = f.row;
+    fruit_update(&f, &p, 0, 100, 0.0f);
+    float t0 = f.popup_timer;
+    fruit_update(&f, &p, 0, 100, 0.1f);
+    TEST_ASSERT(f.popup_timer < t0);
+}
+
+static void test_fruit_popup_timer_zero_on_init(void) {
+    Fruit f;
+    fruit_init(&f);
+    TEST_ASSERT(f.popup_timer == 0.0f);
+}
+
 int main(void) {
     RUN_TEST(test_fruit_init_not_active);
     RUN_TEST(test_fruit_init_not_eaten);
@@ -133,5 +165,8 @@ int main(void) {
     RUN_TEST(test_fruit_no_score_when_eaten);
     RUN_TEST(test_fruit_expires_after_timer);
     RUN_TEST(test_fruit_no_respawn_after_eaten);
+    RUN_TEST(test_fruit_popup_timer_zero_on_init);
+    RUN_TEST(test_fruit_popup_timer_set_on_eat);
+    RUN_TEST(test_fruit_popup_timer_ticks_down);
     TESTS_SUMMARY();
 }
