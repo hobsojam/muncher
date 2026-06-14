@@ -73,6 +73,7 @@ lint:
 		--suppress=staticFunction \
 		--suppress=unusedFunction:src/map.c \
 		--suppress=unusedFunction:src/audio.c \
+		--suppress=unusedFunction:src/ghost.c \
 		src/
 	flawfinder src/
 
