@@ -119,10 +119,10 @@ void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
     fright_timer = 0.0f;
 
     // Start spread across the corridor above the ghost house (row 11, cols 9-18 are open)
-    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY,  9, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 25,  0, RED    };
-    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  18, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  2,  0, PINK   };
-    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 27, 30, SKYBLUE};
-    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  0, 30, ORANGE };
+    ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY,  9, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 25,  0, RED,     0, 0, 0 };
+    ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  18, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  2,  0, PINK,    0, 0, 0 };
+    ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, 11,  1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER, 27, 30, SKYBLUE, 0, 0, 0 };
+    ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, 11, -1, 0, 0.0f, SPEED_NORMAL, GMODE_SCATTER,  0, 30, ORANGE,  0, 0, 0 };
 }
 
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
@@ -153,6 +153,14 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
                     ghosts[i].speed = SPEED_NORMAL;
                 }
             }
+        }
+    }
+
+    // Tick eat-flash timers
+    for (int i = 0; i < GHOST_COUNT; i++) {
+        if (ghosts[i].flash_timer > 0.0f) {
+            ghosts[i].flash_timer -= dt;
+            if (ghosts[i].flash_timer < 0.0f) ghosts[i].flash_timer = 0.0f;
         }
     }
 
@@ -201,10 +209,21 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
             DrawCircle(ex1 + g->dir_col * 2, ey + g->dir_row * 2, 2, DARKBLUE);
             DrawCircle(ex2 + g->dir_col * 2, ey + g->dir_row * 2, 2, DARKBLUE);
         }
+
+        // Score popup when ghost is eaten
+        if (g->flash_timer > 0.0f) {
+            int fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
+            int fy = (int)((float)g->flash_row * TILE_SIZE) + offset_y - 4;
+            DrawText("+200", fx, fy, 14, WHITE);
+        }
     }
 }
 
 void ghost_respawn(Ghost *g) {
+    g->flash_col   = g->col;
+    g->flash_row   = g->row;
+    g->flash_timer = 0.8f;
+    /* TODO: play an eat-ghost sound here — see raylib InitAudioDevice + PlaySound */
     switch (g->id) {
         case GHOST_BLINKY: g->col =  9; g->row = 11; g->dir_col =  1; g->dir_row = 0; break;
         case GHOST_PINKY:  g->col = 18; g->row = 11; g->dir_col = -1; g->dir_row = 0; break;
