@@ -4,10 +4,13 @@
 #include "raylib.h"
 #include "audio.h"
 
-#define PLAYER_START_COL 14
-#define PLAYER_START_ROW 29
-#define PLAYER_SPEED     8.0f
+#define PLAYER_START_COL        14
+#define PLAYER_START_ROW        29
+#define PLAYER_SPEED            8.0f
 #define MAX_TILE_STEPS_PER_UPDATE 8
+#define EXTRA_LIFE_THRESHOLD_1  1500
+#define EXTRA_LIFE_THRESHOLD_2  5000
+#define PLAYER_MAX_LIVES        5
 
 int player_wrap_col(int col) {
     return (col + MAP_COLS) % MAP_COLS;
@@ -31,11 +34,12 @@ void player_init(Player *p) {
     p->move_t = 0.0f;
     p->speed = PLAYER_SPEED;
     p->moved     = 0;
-    p->score     = 0;
-    p->ate_power = 0;
-    p->lives       = 3;
-    p->dead        = 0;
-    p->ghost_chain = 0;
+    p->score           = 0;
+    p->ate_power       = 0;
+    p->lives           = 3;
+    p->dead            = 0;
+    p->ghost_chain     = 0;
+    p->extra_life_flags = 0;
     map[p->row][p->col] = TILE_EMPTY;
 }
 
@@ -108,6 +112,19 @@ void player_update(Player *p, float dt) {
 
     if (p->move_t >= 1.0f) {
         p->move_t = 0.0f;
+    }
+}
+
+void player_check_extra_life(Player *p) {
+    if (!(p->extra_life_flags & 1) && p->score >= EXTRA_LIFE_THRESHOLD_1) {
+        p->extra_life_flags |= 1;
+        if (p->lives < PLAYER_MAX_LIVES) p->lives++;
+        audio_play_extra_life();
+    }
+    if (!(p->extra_life_flags & 2) && p->score >= EXTRA_LIFE_THRESHOLD_2) {
+        p->extra_life_flags |= 2;
+        if (p->lives < PLAYER_MAX_LIVES) p->lives++;
+        audio_play_extra_life();
     }
 }
 
