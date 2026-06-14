@@ -15,7 +15,7 @@ endif
 
 SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c
 
-TESTCFLAGS  = -Wall -Isrc -Itests/stubs --coverage
+TESTCFLAGS  = -Wall -Isrc -Itests/stubs --coverage -fprofile-abs-path
 TEST_MAP    = tests/test_map
 TEST_PLAYER = tests/test_player
 TEST_GHOST  = tests/test_ghost
