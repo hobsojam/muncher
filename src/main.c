@@ -12,6 +12,27 @@
 #define MAP_OFFSET_Y      40
 #define DEATH_FREEZE_SECS 1.5f
 
+static void game_update(Player *p, Ghost ghosts[], float dt,
+                        float *death_timer, int *game_over, int *you_win) {
+    if (*death_timer > 0.0f) {
+        *death_timer -= dt;
+        if (*death_timer <= 0.0f) {
+            *death_timer = 0.0f;
+            handle_ghost_collision(p, ghosts, game_over);
+        }
+        return;
+    }
+    player_update(p, dt);
+    if (p->ate_power) ghosts_frighten(ghosts);
+    ghosts_update(ghosts, p, dt);
+    handle_collision(p, ghosts);
+    if (p->dead) {
+        *death_timer = DEATH_FREEZE_SECS;
+        /* Add a death sound here — see raylib InitAudioDevice + PlaySound */
+    }
+    if (map_dots_remaining() == 0) *you_win = 1;
+}
+
 int main(void) {
     InitWindow(SCREEN_W, SCREEN_H, "Muncher");
     SetTargetFPS(60);
@@ -32,25 +53,8 @@ int main(void) {
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
-        if (!you_win && !game_over) {
-            if (death_timer > 0.0f) {
-                death_timer -= dt;
-                if (death_timer <= 0.0f) {
-                    death_timer = 0.0f;
-                    handle_ghost_collision(&player, ghosts, &game_over);
-                }
-            } else {
-                player_update(&player, dt);
-                if (player.ate_power) ghosts_frighten(ghosts);
-                ghosts_update(ghosts, &player, dt);
-                handle_collision(&player, ghosts);
-                if (player.dead) {
-                    death_timer = DEATH_FREEZE_SECS;
-                    /* TODO: play a death sound here — see raylib InitAudioDevice + PlaySound */
-                }
-                if (map_dots_remaining() == 0) you_win = 1;
-            }
-        }
+        if (!you_win && !game_over)
+            game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
 
         BeginDrawing();
             ClearBackground(BLACK);
