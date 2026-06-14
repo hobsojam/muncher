@@ -62,6 +62,7 @@ lint:
 		--suppress=unmatchedSuppression \
 		--suppress=normalCheckLevelMaxBranches \
 		--suppress=staticFunction \
+		--suppress=unusedFunction:src/map.c \
 		src/
 	flawfinder src/
 

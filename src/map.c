@@ -208,7 +208,6 @@ void map_generate(int level) {
     }
 }
 
-// cppcheck-suppress unusedFunction
 void map_init(void) { map_generate(1); }
 
 /* ------------------------------------------------------------------ */
