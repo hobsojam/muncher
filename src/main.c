@@ -73,6 +73,8 @@ int main(void) {
         float dt = GetFrameTime();
         audio_update();
 
+        if (IsKeyPressed(KEY_F)) ToggleFullscreen();
+
         if (state == STATE_TITLE) {
             if (IsKeyPressed(KEY_ENTER)) {
                 state = STATE_PLAYING;
