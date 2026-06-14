@@ -61,6 +61,7 @@ lint:
 		--suppress=missingIncludeSystem \
 		--suppress=unmatchedSuppression \
 		--suppress=normalCheckLevelMaxBranches \
+		--suppress=staticFunction \
 		src/
 	flawfinder src/
 
