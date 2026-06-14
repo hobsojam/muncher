@@ -5,6 +5,7 @@
 #include "lives.h"
 #include "collision.h"
 #include "audio.h"
+#include "fruit.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -15,8 +16,8 @@
 
 typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
 
-static void game_update(Player *p, Ghost ghosts[], float dt,
-                        float *death_timer, int *game_over, int *you_win) {
+static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
+                        float dt, float *death_timer, int *game_over, int *you_win) {
     if (*death_timer > 0.0f) {
         *death_timer -= dt;
         if (*death_timer <= 0.0f) {
@@ -29,6 +30,7 @@ static void game_update(Player *p, Ghost ghosts[], float dt,
     if (p->ate_power) ghosts_frighten(ghosts);
     ghosts_update(ghosts, p, dt);
     handle_collision(p, ghosts);
+    fruit_update(fruit, p, map_dots_remaining(), total_dots, dt);
     if (p->dead) {
         *death_timer = DEATH_FREEZE_SECS;
         audio_play_death();
@@ -55,6 +57,9 @@ int main(void) {
     Ghost ghosts[GHOST_COUNT];
     ghosts_init(ghosts);
 
+    Fruit fruit;
+    fruit_init(&fruit);
+    int       total_dots  = map_dots_remaining();
     int       you_win     = 0;
     int       game_over   = 0;
     float     death_timer = 0.0f;
@@ -101,6 +106,8 @@ int main(void) {
                     }
                     if (reset_ok) {
                         ghosts_init(ghosts);
+                        fruit_init(&fruit);
+                        total_dots  = map_dots_remaining();
                         you_win     = 0;
                         game_over   = 0;
                         death_timer = 0.0f;
@@ -109,7 +116,8 @@ int main(void) {
                     }
                 }
             } else if (!paused) {
-                game_update(&player, ghosts, dt, &death_timer, &game_over, &you_win);
+                game_update(&player, ghosts, &fruit, total_dots, dt,
+                            &death_timer, &game_over, &you_win);
             }
         }
 
@@ -131,6 +139,7 @@ int main(void) {
                 if (!player.dead || (int)(death_timer * 6) % 2)
                     player_draw(&player, 0, MAP_OFFSET_Y);
                 ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
+                fruit_draw(&fruit, 0, MAP_OFFSET_Y);
                 if (you_win) {
                     int tw = MeasureText("LEVEL CLEAR!", 36);
                     DrawText("LEVEL CLEAR!",

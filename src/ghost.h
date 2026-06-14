@@ -40,6 +40,7 @@ typedef struct {
     int       flash_col;
     int       flash_row;
     float     release_timer;
+    int       eat_score;
 } Ghost;
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]);

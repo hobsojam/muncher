@@ -33,8 +33,9 @@ void player_init(Player *p) {
     p->moved     = 0;
     p->score     = 0;
     p->ate_power = 0;
-    p->lives     = 3;
-    p->dead      = 0;
+    p->lives       = 3;
+    p->dead        = 0;
+    p->ghost_chain = 0;
     map[p->row][p->col] = TILE_EMPTY;
 }
 
@@ -51,6 +52,7 @@ void player_respawn(Player *p) {
     p->moved        = 0;
     p->ate_power    = 0;
     p->dead         = 0;
+    p->ghost_chain  = 0;
 }
 
 void player_update(Player *p, float dt) {
@@ -87,8 +89,9 @@ void player_update(Player *p, float dt) {
             audio_play_chomp();
         } else if (map[p->row][p->col] == TILE_POWER) {
             map[p->row][p->col] = TILE_EMPTY;
-            p->score    += 10;
-            p->ate_power = 1;
+            p->score       += 10;
+            p->ate_power    = 1;
+            p->ghost_chain  = 0;
             audio_play_power();
         }
 
