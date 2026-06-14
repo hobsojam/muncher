@@ -38,7 +38,8 @@ int main(void) {
     SetTargetFPS(60);
     srand((unsigned)time(NULL));
 
-    map_init();
+    static int level = 1;
+    map_generate(level);
 
     Player player;
     player_init(&player);
@@ -55,8 +56,15 @@ int main(void) {
 
         if (you_win || game_over) {
             if (IsKeyPressed(KEY_R)) {
-                map_init();
-                player_init(&player);
+                if (you_win) {
+                    level++;
+                    map_generate(level);
+                    player_respawn(&player);
+                } else {
+                    level = 1;
+                    map_generate(level);
+                    player_init(&player);
+                }
                 ghosts_init(ghosts);
                 you_win     = 0;
                 game_over   = 0;
@@ -69,23 +77,26 @@ int main(void) {
         BeginDrawing();
             ClearBackground(BLACK);
             DrawText("MUNCHER", 10, 10, 20, YELLOW);
-            DrawText(TextFormat("SCORE: %d", player.score), 200, 10, 20, WHITE);
-            DrawText(TextFormat("LIVES: %d", player.lives), 400, 10, 20, WHITE);
+            DrawText(TextFormat("SCORE: %d",  player.score), 130, 10, 20, WHITE);
+            DrawText(TextFormat("LIVES: %d",  player.lives), 300, 10, 20, WHITE);
+            DrawText(TextFormat("LEVEL: %d",  level),        430, 10, 20, WHITE);
             map_draw(0, MAP_OFFSET_Y);
             if (!player.dead || (int)(death_timer * 6) % 2)
                 player_draw(&player, 0, MAP_OFFSET_Y);
             ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
             if (you_win) {
-                DrawText("YOU WIN!", SCREEN_W / 2 - 80, SCREEN_H / 2 - 20, 40, YELLOW);
-                DrawText("Press R to play again", SCREEN_W / 2 - 110, SCREEN_H / 2 + 30, 20, WHITE);
+                int tw = MeasureText("LEVEL CLEAR!", 36);
+                DrawText("LEVEL CLEAR!",
+                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 28, 36, YELLOW);
+                DrawText("Press R for next level",
+                         SCREEN_W / 2 - 115, SCREEN_H / 2 + 18, 20, WHITE);
             }
             if (game_over) {
-                int text_w = MeasureText("GAME OVER", 40);
+                int tw = MeasureText("GAME OVER", 40);
                 DrawText("GAME OVER",
-                         (SCREEN_W - text_w) / 2,
-                         SCREEN_H / 2 - 20,
-                         40, RED);
-                DrawText("Press R to play again", SCREEN_W / 2 - 110, SCREEN_H / 2 + 30, 20, WHITE);
+                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 20, 40, RED);
+                DrawText("Press R to restart",
+                         SCREEN_W / 2 - 95, SCREEN_H / 2 + 30, 20, WHITE);
             }
         EndDrawing();
     }
