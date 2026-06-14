@@ -17,6 +17,8 @@ typedef enum {
     GMODE_SCATTER    = 0,
     GMODE_CHASE      = 1,
     GMODE_FRIGHTENED = 2,
+    GMODE_HOUSE      = 3,
+    GMODE_EXITING    = 4,
 } GhostMode;
 
 typedef struct {
@@ -37,6 +39,7 @@ typedef struct {
     float     flash_timer;
     int       flash_col;
     int       flash_row;
+    float     release_timer;
 } Ghost;
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]);
