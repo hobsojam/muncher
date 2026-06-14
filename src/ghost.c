@@ -276,7 +276,8 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
         float py = ((float)g->row + (float)g->dir_row * t) * TILE_SIZE + TILE_SIZE / 2.0f + offset_y;
         float r  = (float)TILE_SIZE / 2.0f - 1.0f;
 
-        Color body = (g->mode == GMODE_FRIGHTENED) ? BLUE : g->color;
+        int flash = g->mode == GMODE_FRIGHTENED && ghost_frighten_flashing(fright_timer);
+        Color body = (g->mode == GMODE_FRIGHTENED) ? (flash ? WHITE : BLUE) : g->color;
 
         // Body: circle head + rectangular skirt
         DrawCircle((int)px, (int)(py - r * 0.25f), (int)r, body);
@@ -297,7 +298,7 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
         if (g->flash_timer > 0.0f) {
             int fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
             int fy = (int)((float)g->flash_row * TILE_SIZE) + offset_y - 4;
-            DrawText("+200", fx, fy, 14, WHITE);
+            DrawText(TextFormat("+%d", g->eat_score), fx, fy, 14, WHITE);
         }
     }
 }
@@ -319,6 +320,14 @@ void ghost_respawn(Ghost *g) {
     g->mode         = GMODE_HOUSE;
     g->release_timer = 3.0f;
 }
+
+int ghost_frighten_flashing(float t) {
+    return t < GHOST_FRIGHTEN_FLASH_SECS && (int)(t * 5.0f) % 2 == 0;
+}
+
+#ifdef MUNCHER_TEST
+float ghost_internal_fright_timer(void) { return fright_timer; }
+#endif
 
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]) {
     fright_timer = FRIGHTENED_SECS;

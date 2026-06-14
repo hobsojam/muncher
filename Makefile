@@ -13,7 +13,7 @@ else
     RM      = rm -f
 endif
 
-SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c src/audio.c src/hiscore.c
+SRC = src/main.c src/map.c src/player.c src/ghost.c src/lives.c src/collision.c src/audio.c src/fruit.c src/hiscore.c
 
 TESTCFLAGS  = -Wall -Itests/stubs -Isrc -DMUNCHER_TEST --coverage -fprofile-abs-path
 TEST_MAP    = tests/test_map
@@ -24,7 +24,8 @@ TEST_LIVES      = tests/test_lives
 TEST_COLLISION  = tests/test_collision
 TEST_AUDIO      = tests/test_audio
 TEST_HISCORE    = tests/test_hiscore
-TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION) $(TEST_AUDIO) $(TEST_HISCORE)
+TEST_FRUIT      = tests/test_fruit
+TEST_BINS   = $(TEST_MAP) $(TEST_PLAYER) $(TEST_GHOST) $(TEST_WIN) $(TEST_LIVES) $(TEST_COLLISION) $(TEST_AUDIO) $(TEST_HISCORE) $(TEST_FRUIT)
 TEST_EXES   = $(addsuffix .exe,$(TEST_BINS))
 TEST_OUTPUTS = $(TEST_BINS) $(TEST_EXES)
 TEST_CLEAN_TARGETS = $(OUT) $(TEST_OUTPUTS)
@@ -44,6 +45,7 @@ test: $(TEST_BINS)
 	./$(TEST_COLLISION)
 	./$(TEST_AUDIO)
 	./$(TEST_HISCORE)
+	./$(TEST_FRUIT)
 
 $(TEST_MAP): tests/test_map.c tests/test_framework.h tests/stubs/raylib.h src/map.c src/map.h src/map_internal.h
 	$(CC) tests/test_map.c src/map.c -o $(TEST_MAP) $(TESTCFLAGS)
@@ -69,6 +71,9 @@ $(TEST_AUDIO): tests/test_audio.c tests/test_framework.h tests/stubs/raylib.h sr
 $(TEST_HISCORE): tests/test_hiscore.c tests/test_framework.h src/hiscore.c src/hiscore.h
 	$(CC) tests/test_hiscore.c src/hiscore.c -o $(TEST_HISCORE) $(TESTCFLAGS)
 
+$(TEST_FRUIT): tests/test_fruit.c tests/test_framework.h tests/stubs/raylib.h src/fruit.c src/fruit.h src/player.c src/player.h src/map.c src/map.h src/audio.c src/audio.h
+	$(CC) tests/test_fruit.c src/fruit.c src/player.c src/map.c src/audio.c -o $(TEST_FRUIT) $(TESTCFLAGS)
+
 lint:
 	cppcheck --enable=all --error-exitcode=1 \
 		--suppress=missingInclude \
@@ -78,6 +83,7 @@ lint:
 		--suppress=staticFunction \
 		--suppress=unusedFunction:src/map.c \
 		--suppress=unusedFunction:src/audio.c \
+		--suppress=unusedFunction:src/ghost.c \
 		src/
 	flawfinder src/
 

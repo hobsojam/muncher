@@ -10,6 +10,9 @@ void audio_play_power(void);
 void audio_play_ghost_eat(void);
 void audio_play_death(void);
 
+void audio_pause(void);
+void audio_resume(void);
+
 void audio_toggle_music_mute(void);
 void audio_toggle_sfx_mute(void);
 void audio_set_music_volume(float vol);   /* 0.0 – 1.0 */

@@ -1,6 +1,9 @@
 #ifndef RAYLIB_H
 #define RAYLIB_H
 
+#include <stdio.h>
+#include <stdarg.h>
+
 typedef struct {
     unsigned char r;
     unsigned char g;
@@ -51,6 +54,14 @@ static inline void DrawCircleSector(Vector2 c, float r, float s, float e, int se
 static inline int IsKeyDown(int key) { (void)key; return 0; }
 static inline void DrawText(const char *t, int x, int y, int s, Color c)
     { (void)t;(void)x;(void)y;(void)s;(void)c; }
+static inline const char *TextFormat(const char *fmt, ...) {
+    static char buf[64];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    return buf;
+}
 
 static inline void  InitAudioDevice(void) {}
 static inline void  CloseAudioDevice(void) {}
@@ -60,6 +71,10 @@ static inline int IsMusicValid(Music m) { return m.ctx != 0; }
 static inline void  UnloadMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
 static inline void  PlayMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  PauseMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  ResumeMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
 static inline void  UpdateMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }

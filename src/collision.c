@@ -10,13 +10,18 @@ static int player_crossed_ghost(const Player *p, const Ghost *g) {
            g->prev_col == p->col && g->prev_row == p->row;
 }
 
+static const int CHAIN_SCORES[] = {200, 400, 800, 1600};
+
 void handle_collision(Player *p, Ghost ghosts[]) {
     for (int i = 0; i < GHOST_COUNT; i++) {
         if (!player_on_ghost(p, &ghosts[i]) && !player_crossed_ghost(p, &ghosts[i])) continue;
         if (ghosts[i].mode == GMODE_FRIGHTENED) {
-            p->score += 200;
+            if (p->ghost_chain < 4) p->ghost_chain++;
+            int score = CHAIN_SCORES[p->ghost_chain - 1];
+            ghosts[i].eat_score = score;
+            p->score += score;
             ghost_respawn(&ghosts[i]);
-        } else {
+        } else if (ghosts[i].mode != GMODE_HOUSE && ghosts[i].mode != GMODE_EXITING) {
             p->dead = 1;
         }
     }

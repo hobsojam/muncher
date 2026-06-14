@@ -103,6 +103,9 @@ void audio_play_death(void) {
 void audio_step_music_volume(float delta) { audio_set_music_volume(s_music_vol + delta); }
 void audio_step_sfx_volume(float delta)   { audio_set_sfx_volume(s_sfx_vol   + delta); }
 
+void audio_pause(void)  { if (s_music_loaded) PauseMusicStream(s_music); }
+void audio_resume(void) { if (s_music_loaded) ResumeMusicStream(s_music); }
+
 void audio_toggle_music_mute(void) {
     s_music_muted = !s_music_muted;
     if (s_music_loaded) SetMusicVolume(s_music, s_music_muted ? 0.0f : s_music_vol);
