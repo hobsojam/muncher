@@ -43,6 +43,7 @@ void player_respawn(Player *p) {
     p->next_dir_row = 0;
     p->move_t       = 0.0f;
     p->ate_power    = 0;
+    p->dead         = 0;
 }
 
 void player_update(Player *p, float dt) {

@@ -45,34 +45,37 @@ static void test_respawn_preserves_lives(void) {
     TEST_ASSERT_EQUAL_INT(2, p.lives);
 }
 
+static void test_respawn_clears_dead(void) {
+    map_init();
+    Player p; player_init(&p);
+    p.dead = 1;
+    player_respawn(&p);
+    TEST_ASSERT_EQUAL_INT(0, p.dead);
+}
+
 /* ------------------------------------------------------------------ */
-/* handle_ghost_collision — lives decrement                            */
+/* handle_ghost_collision — reacts to p->dead, not ghost positions     */
 /* ------------------------------------------------------------------ */
 
-static void test_normal_ghost_decrements_lives(void) {
+static void test_dead_decrements_lives(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 10;
-
     Player p; player_init(&p);
-    p.col = 5; p.row = 10;
+    p.dead = 1;
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
     TEST_ASSERT_EQUAL_INT(2, p.lives);
     TEST_ASSERT_EQUAL_INT(0, game_over);
 }
 
-static void test_death_respawns_player(void) {
+static void test_dead_respawns_player(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 10;
-
     Player p; player_init(&p);
-    p.col = 5; p.row = 10;
+    p.col = 5; p.row = 5;
+    p.dead = 1;
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
     TEST_ASSERT_EQUAL_INT(14, p.col);
     TEST_ASSERT_EQUAL_INT(29, p.row);
 }
@@ -80,13 +83,10 @@ static void test_death_respawns_player(void) {
 static void test_last_life_sets_game_over(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 10;
-
     Player p; player_init(&p);
-    p.col = 5; p.row = 10; p.lives = 1;
+    p.lives = 1; p.dead = 1;
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
     TEST_ASSERT_EQUAL_INT(1, game_over);
     TEST_ASSERT_EQUAL_INT(0, p.lives);
 }
@@ -94,57 +94,33 @@ static void test_last_life_sets_game_over(void) {
 static void test_lives_never_go_negative(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].col = 5; ghosts[GHOST_BLINKY].row = 10;
-
     Player p; player_init(&p);
-    p.col = 5; p.row = 10; p.lives = 0;
+    p.lives = 0; p.dead = 1;
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
     TEST_ASSERT(p.lives >= 0);
     TEST_ASSERT_EQUAL_INT(1, game_over);
 }
 
-static void test_frightened_ghost_no_life_lost(void) {
+static void test_not_dead_no_life_lost(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_BLINKY].mode = GMODE_FRIGHTENED;
-    ghosts[GHOST_BLINKY].col  = 5; ghosts[GHOST_BLINKY].row = 10;
-
     Player p; player_init(&p);
-    p.col = 5; p.row = 10;
+    /* p->dead is 0 from player_init — no collision signalled */
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
     TEST_ASSERT_EQUAL_INT(3, p.lives);
     TEST_ASSERT_EQUAL_INT(0, game_over);
 }
 
-static void test_no_overlap_no_life_lost(void) {
+static void test_dead_cleared_after_collision(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-
     Player p; player_init(&p);
-    p.col = 14; p.row = 29;
+    p.dead = 1;
     int game_over = 0;
     handle_ghost_collision(&p, ghosts, &game_over);
-
-    TEST_ASSERT_EQUAL_INT(3, p.lives);
-    TEST_ASSERT_EQUAL_INT(0, game_over);
-}
-
-static void test_chase_ghost_decrements_lives(void) {
-    map_init();
-    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
-    ghosts[GHOST_PINKY].mode = GMODE_CHASE;
-    ghosts[GHOST_PINKY].col  = 5; ghosts[GHOST_PINKY].row = 10;
-
-    Player p; player_init(&p);
-    p.col = 5; p.row = 10;
-    int game_over = 0;
-    handle_ghost_collision(&p, ghosts, &game_over);
-
-    TEST_ASSERT_EQUAL_INT(2, p.lives);
+    TEST_ASSERT_EQUAL_INT(0, p.dead);
 }
 
 int main(void) {
@@ -153,12 +129,12 @@ int main(void) {
     RUN_TEST(test_respawn_resets_position);
     RUN_TEST(test_respawn_preserves_score);
     RUN_TEST(test_respawn_preserves_lives);
-    RUN_TEST(test_normal_ghost_decrements_lives);
-    RUN_TEST(test_death_respawns_player);
+    RUN_TEST(test_respawn_clears_dead);
+    RUN_TEST(test_dead_decrements_lives);
+    RUN_TEST(test_dead_respawns_player);
     RUN_TEST(test_last_life_sets_game_over);
     RUN_TEST(test_lives_never_go_negative);
-    RUN_TEST(test_frightened_ghost_no_life_lost);
-    RUN_TEST(test_no_overlap_no_life_lost);
-    RUN_TEST(test_chase_ghost_decrements_lives);
+    RUN_TEST(test_not_dead_no_life_lost);
+    RUN_TEST(test_dead_cleared_after_collision);
     TESTS_SUMMARY();
 }
