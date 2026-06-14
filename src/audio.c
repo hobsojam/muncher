@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "audio_internal.h"
 #include "raylib.h"
 
 static Music s_music;
@@ -85,3 +86,17 @@ void audio_toggle_music_mute(void) {
 void audio_toggle_sfx_mute(void) {
     s_sfx_muted = !s_sfx_muted;
 }
+
+#ifdef MUNCHER_TEST
+void audio_internal_reset_state(void) {
+    s_music_vol = 1.0f;
+    s_sfx_vol = 1.0f;
+    s_music_muted = 0;
+    s_sfx_muted = 0;
+}
+
+float audio_internal_music_volume(void) { return s_music_vol; }
+float audio_internal_sfx_volume(void) { return s_sfx_vol; }
+int audio_internal_music_muted(void) { return s_music_muted; }
+int audio_internal_sfx_muted(void) { return s_sfx_muted; }
+#endif

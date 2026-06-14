@@ -136,7 +136,7 @@ static void place_power_pellets(unsigned int *rng) {
     }
 }
 
-static int map_all_dots_reachable(void) {
+int map_all_dots_reachable(void) {
     static int seen[MAP_ROWS][MAP_COLS];
     static int qr[MAP_ROWS * MAP_COLS];
     static int qc[MAP_ROWS * MAP_COLS];

@@ -1,115 +1,115 @@
 #include "test_framework.h"
-#include "../src/audio.c"
+#include "audio.h"
+#include "audio_internal.h"
 
 /* Reset to a clean, known state before each test */
 static void reset(void) {
     audio_init();
-    s_music_muted = 0;
-    s_sfx_muted   = 0;
+    audio_internal_reset_state();
 }
 
 static void test_set_music_volume_clamps_low(void) {
     reset();
     audio_set_music_volume(-1.0f);
-    TEST_ASSERT(s_music_vol == 0.0f);
+    TEST_ASSERT(audio_internal_music_volume() == 0.0f);
 }
 
 static void test_set_music_volume_clamps_high(void) {
     reset();
     audio_set_music_volume(2.0f);
-    TEST_ASSERT(s_music_vol == 1.0f);
+    TEST_ASSERT(audio_internal_music_volume() == 1.0f);
 }
 
 static void test_set_music_volume_stores(void) {
     reset();
     audio_set_music_volume(0.25f);
-    TEST_ASSERT(s_music_vol == 0.25f);
+    TEST_ASSERT(audio_internal_music_volume() == 0.25f);
 }
 
 static void test_set_sfx_volume_clamps_low(void) {
     reset();
     audio_set_sfx_volume(-0.5f);
-    TEST_ASSERT(s_sfx_vol == 0.0f);
+    TEST_ASSERT(audio_internal_sfx_volume() == 0.0f);
 }
 
 static void test_set_sfx_volume_clamps_high(void) {
     reset();
     audio_set_sfx_volume(1.5f);
-    TEST_ASSERT(s_sfx_vol == 1.0f);
+    TEST_ASSERT(audio_internal_sfx_volume() == 1.0f);
 }
 
 static void test_set_sfx_volume_stores(void) {
     reset();
     audio_set_sfx_volume(0.25f);
-    TEST_ASSERT(s_sfx_vol == 0.25f);
+    TEST_ASSERT(audio_internal_sfx_volume() == 0.25f);
 }
 
 static void test_step_music_volume_up(void) {
     reset();
     audio_set_music_volume(0.5f);
     audio_step_music_volume(0.25f);
-    TEST_ASSERT(s_music_vol == 0.75f);
+    TEST_ASSERT(audio_internal_music_volume() == 0.75f);
 }
 
 static void test_step_music_volume_clamps_high(void) {
     reset();
     audio_set_music_volume(1.0f);
     audio_step_music_volume(0.5f);
-    TEST_ASSERT(s_music_vol == 1.0f);
+    TEST_ASSERT(audio_internal_music_volume() == 1.0f);
 }
 
 static void test_step_music_volume_down(void) {
     reset();
     audio_set_music_volume(0.5f);
     audio_step_music_volume(-0.25f);
-    TEST_ASSERT(s_music_vol == 0.25f);
+    TEST_ASSERT(audio_internal_music_volume() == 0.25f);
 }
 
 static void test_step_music_volume_clamps_low(void) {
     reset();
     audio_set_music_volume(0.0f);
     audio_step_music_volume(-0.5f);
-    TEST_ASSERT(s_music_vol == 0.0f);
+    TEST_ASSERT(audio_internal_music_volume() == 0.0f);
 }
 
 static void test_step_sfx_volume_up(void) {
     reset();
     audio_set_sfx_volume(0.5f);
     audio_step_sfx_volume(0.25f);
-    TEST_ASSERT(s_sfx_vol == 0.75f);
+    TEST_ASSERT(audio_internal_sfx_volume() == 0.75f);
 }
 
 static void test_step_sfx_volume_clamps_high(void) {
     reset();
     audio_set_sfx_volume(1.0f);
     audio_step_sfx_volume(0.5f);
-    TEST_ASSERT(s_sfx_vol == 1.0f);
+    TEST_ASSERT(audio_internal_sfx_volume() == 1.0f);
 }
 
 static void test_toggle_music_mute(void) {
     reset();
-    TEST_ASSERT_EQUAL_INT(0, s_music_muted);
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_music_muted());
     audio_toggle_music_mute();
-    TEST_ASSERT_EQUAL_INT(1, s_music_muted);
+    TEST_ASSERT_EQUAL_INT(1, audio_internal_music_muted());
     audio_toggle_music_mute();
-    TEST_ASSERT_EQUAL_INT(0, s_music_muted);
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_music_muted());
 }
 
 static void test_toggle_sfx_mute(void) {
     reset();
-    TEST_ASSERT_EQUAL_INT(0, s_sfx_muted);
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_sfx_muted());
     audio_toggle_sfx_mute();
-    TEST_ASSERT_EQUAL_INT(1, s_sfx_muted);
+    TEST_ASSERT_EQUAL_INT(1, audio_internal_sfx_muted());
     audio_toggle_sfx_mute();
-    TEST_ASSERT_EQUAL_INT(0, s_sfx_muted);
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_sfx_muted());
 }
 
 static void test_set_music_volume_while_muted_preserves_stored_vol(void) {
     reset();
     audio_toggle_music_mute();
     audio_set_music_volume(0.25f);
-    TEST_ASSERT(s_music_vol == 0.25f);
-    TEST_ASSERT_EQUAL_INT(1, s_music_muted);
+    TEST_ASSERT(audio_internal_music_volume() == 0.25f);
+    TEST_ASSERT_EQUAL_INT(1, audio_internal_music_muted());
 }
 
 /* Exercise both branches of the sfx-muted guard in each play function */

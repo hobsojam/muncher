@@ -1,9 +1,7 @@
 #include "test_framework.h"
-#include "../src/map.c"
-#include "../src/ghost.c"
-
-// ghost_wrap_col, ghost_can_enter, dist_sq, get_target are static in ghost.c;
-// including the .c makes them visible here.
+#include "map.h"
+#include "ghost.h"
+#include "ghost_internal.h"
 
 static void test_ghost_wrap_col_negative(void) {
     TEST_ASSERT_EQUAL_INT(27, ghost_wrap_col(-1));
@@ -18,9 +16,9 @@ static void test_ghost_wrap_col_normal(void) {
 }
 
 static void test_dist_sq(void) {
-    TEST_ASSERT_EQUAL_INT(25, dist_sq(0, 0, 3, 4));
-    TEST_ASSERT_EQUAL_INT(0,  dist_sq(5, 5, 5, 5));
-    TEST_ASSERT_EQUAL_INT(2,  dist_sq(0, 0, 1, 1));
+    TEST_ASSERT_EQUAL_INT(25, ghost_dist_sq(0, 0, 3, 4));
+    TEST_ASSERT_EQUAL_INT(0,  ghost_dist_sq(5, 5, 5, 5));
+    TEST_ASSERT_EQUAL_INT(2,  ghost_dist_sq(0, 0, 1, 1));
 }
 
 static void test_ghost_can_enter_wall(void) {
@@ -35,8 +33,8 @@ static void test_ghost_can_enter_open(void) {
 
 static void test_ghost_can_enter_tunnel_oob(void) {
     map_init();
-    TEST_ASSERT_EQUAL_INT(1, ghost_can_enter(-1, TUNNEL_ROW));
-    TEST_ASSERT_EQUAL_INT(1, ghost_can_enter(MAP_COLS, TUNNEL_ROW));
+    TEST_ASSERT_EQUAL_INT(1, ghost_can_enter(-1, GHOST_TUNNEL_ROW));
+    TEST_ASSERT_EQUAL_INT(1, ghost_can_enter(MAP_COLS, GHOST_TUNNEL_ROW));
 }
 
 static void test_ghost_can_enter_oob_non_tunnel(void) {
@@ -73,7 +71,7 @@ static void test_scatter_target_returns_scatter_pos(void) {
     player.col = 14; player.row = 29;
     int tc;
     int tr;
-    get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
+    ghost_get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_BLINKY].scatter_col, tc);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_BLINKY].scatter_row, tr);
 }
@@ -87,7 +85,7 @@ static void test_blinky_chase_targets_player(void) {
     player.col = 10; player.row = 20;
     int tc;
     int tr;
-    get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
+    ghost_get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(10, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
 }
@@ -102,7 +100,7 @@ static void test_pinky_chase_targets_4_ahead(void) {
     player.dir_col = 1; player.dir_row = 0;
     int tc;
     int tr;
-    get_target(&ghosts[GHOST_PINKY], &player, ghosts, &tc, &tr);
+    ghost_get_target(&ghosts[GHOST_PINKY], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(14, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
 }
@@ -118,7 +116,7 @@ static void test_clyde_far_targets_player(void) {
     player.col = 14; player.row = 20;
     int tc;
     int tr;
-    get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
+    ghost_get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(14, tc);
     TEST_ASSERT_EQUAL_INT(20, tr);
 }
@@ -134,7 +132,7 @@ static void test_clyde_near_targets_scatter(void) {
     player.col = 14; player.row = 20;
     int tc;
     int tr;
-    get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
+    ghost_get_target(&ghosts[GHOST_CLYDE], &player, ghosts, &tc, &tr);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_col, tc);
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_row, tr);
 }

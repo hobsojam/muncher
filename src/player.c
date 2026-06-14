@@ -1,4 +1,5 @@
 #include "player.h"
+#include "player_internal.h"
 #include "map.h"
 #include "raylib.h"
 #include "audio.h"
@@ -7,15 +8,13 @@
 #define PLAYER_START_ROW 29
 #define PLAYER_SPEED     8.0f
 
-#define TUNNEL_ROW 14
-
-static int wrap_col(int col) {
+int player_wrap_col(int col) {
     return (col + MAP_COLS) % MAP_COLS;
 }
 
-static int can_enter(int col, int row) {
+int player_can_enter(int col, int row) {
     if (row < 0 || row >= MAP_ROWS) return 0;
-    if (col < 0 || col >= MAP_COLS) return row == TUNNEL_ROW;
+    if (col < 0 || col >= MAP_COLS) return row == PLAYER_TUNNEL_ROW;
     return map[row][col] != TILE_WALL && map[row][col] != TILE_DOOR;
 }
 
@@ -54,7 +53,7 @@ void player_update(Player *p, float dt) {
     if (IsKeyDown(KEY_UP))    { p->next_dir_col =  0; p->next_dir_row = -1; }
 
     if (p->dir_col == 0 && p->dir_row == 0) {
-        if (can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {
+        if (player_can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {
             p->dir_col = p->next_dir_col;
             p->dir_row = p->next_dir_row;
         }
@@ -66,7 +65,7 @@ void player_update(Player *p, float dt) {
         p->move_t -= 1.0f;
         p->col += p->dir_col;
         p->row += p->dir_row;
-        p->col = wrap_col(p->col);
+        p->col = player_wrap_col(p->col);
 
         p->ate_power = 0;
         if (map[p->row][p->col] == TILE_DOT) {
@@ -80,10 +79,10 @@ void player_update(Player *p, float dt) {
             audio_play_power();
         }
 
-        if (can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {
+        if (player_can_enter(p->col + p->next_dir_col, p->row + p->next_dir_row)) {
             p->dir_col = p->next_dir_col;
             p->dir_row = p->next_dir_row;
-        } else if (!can_enter(p->col + p->dir_col, p->row + p->dir_row)) {
+        } else if (!player_can_enter(p->col + p->dir_col, p->row + p->dir_row)) {
             p->dir_col = 0;
             p->dir_row = 0;
             p->move_t = 0.0f;

@@ -1,5 +1,6 @@
 #include "test_framework.h"
-#include "../src/map.c"
+#include "map.h"
+#include "map_internal.h"
 
 static int map_power_count(void) {
     int n = 0;
