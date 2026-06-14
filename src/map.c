@@ -56,6 +56,38 @@ static void carve(int ci, int cj, unsigned int *rng) {
     }
 }
 
+/* For each dead-end cell, open one wall to a carved neighbour. */
+static void braid_maze(unsigned int *rng) {
+    for (int ci = 0; ci < CELL_ROWS; ci++) {
+        for (int cj = 0; cj < CELL_COLS; cj++) {
+            if (ghost_zone(ci, cj)) continue;
+            int tr = 2*ci + 1, tc = 2*cj + 1;
+
+            int open = 0;
+            int wpr[4], wpc[4], nw = 0;
+
+            for (int k = 0; k < 4; k++) {
+                int pr = tr + DROW[k], pc = tc + DCOL[k];
+                if (pr < 0 || pr >= MAP_ROWS || pc < 0 || pc >= MAP_COLS) continue;
+                if (map[pr][pc] == TILE_EMPTY) {
+                    open++;
+                } else if (map[pr][pc] == TILE_WALL) {
+                    int nr = pr + DROW[k], nc = pc + DCOL[k];
+                    if (nr < 0 || nr >= MAP_ROWS || nc < 0 || nc >= MAP_COLS) continue;
+                    if (map[nr][nc] != TILE_EMPTY) continue;
+                    if (ghost_zone((nr - 1) / 2, (nc - 1) / 2)) continue;
+                    wpr[nw] = pr; wpc[nw] = pc; nw++;
+                }
+            }
+
+            if (open == 1 && nw > 0) {
+                int pick = (int)(lcg(rng) % (unsigned int)nw);
+                map[wpr[pick]][wpc[pick]] = TILE_EMPTY;
+            }
+        }
+    }
+}
+
 static void stamp_ghost_house(void) {
     for (int c = 10; c <= 12; c++) map[12][c] = TILE_WALL;
     map[12][13] = TILE_DOOR;
@@ -159,6 +191,8 @@ void map_generate(int level) {
         /* Ghost spawn corridor (row 11) and player start must always be passable. */
         for (int c = 9; c <= 19; c++) map[11][c] = TILE_EMPTY;
         map[29][14] = TILE_EMPTY;
+
+        braid_maze(&rng);
 
         for (int r = 1; r < MAP_ROWS - 1; r++)
             for (int c = 1; c < MAP_COLS - 1; c++)
