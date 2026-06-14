@@ -33,6 +33,7 @@ static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
     ghosts_update(ghosts, p, dt);
     handle_collision(p, ghosts);
     fruit_update(fruit, p, map_dots_remaining(), total_dots, dt);
+    player_check_extra_life(p);
     if (p->dead) {
         *death_timer = DEATH_FREEZE_SECS;
         audio_play_death();

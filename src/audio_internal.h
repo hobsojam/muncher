@@ -13,6 +13,7 @@ int audio_internal_power_loaded(void);
 int audio_internal_ghost_eat_loaded(void);
 int audio_internal_death_loaded(void);
 int audio_internal_fruit_eat_loaded(void);
+int audio_internal_extra_life_loaded(void);
 void audio_internal_stub_reset(void);
 void audio_internal_stub_set_music_load_success(int v);
 void audio_internal_stub_set_sound_load_success(int v);

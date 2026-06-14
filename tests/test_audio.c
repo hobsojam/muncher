@@ -121,6 +121,7 @@ static void test_play_sounds_when_unmuted(void) {
     audio_play_ghost_eat();
     audio_play_death();
     audio_play_fruit_eat();
+    audio_play_extra_life();
 }
 
 static void test_play_sounds_when_muted(void) {
@@ -131,6 +132,7 @@ static void test_play_sounds_when_muted(void) {
     audio_play_ghost_eat();
     audio_play_death();
     audio_play_fruit_eat();
+    audio_play_extra_life();
 }
 
 static void test_audio_update_no_crash(void) {
@@ -196,6 +198,7 @@ static void test_failed_sound_loads_are_ignored(void) {
     audio_play_ghost_eat();
     audio_play_death();
     audio_play_fruit_eat();
+    audio_play_extra_life();
     audio_close();
 
     TEST_ASSERT_EQUAL_INT(0, audio_internal_chomp_loaded());
@@ -203,6 +206,7 @@ static void test_failed_sound_loads_are_ignored(void) {
     TEST_ASSERT_EQUAL_INT(0, audio_internal_ghost_eat_loaded());
     TEST_ASSERT_EQUAL_INT(0, audio_internal_death_loaded());
     TEST_ASSERT_EQUAL_INT(0, audio_internal_fruit_eat_loaded());
+    TEST_ASSERT_EQUAL_INT(0, audio_internal_extra_life_loaded());
     TEST_ASSERT_EQUAL_INT(0, audio_internal_stub_invalid_sound_ops());
 }
 

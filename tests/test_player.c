@@ -106,6 +106,60 @@ static void test_player_init_position(void) {
     TEST_ASSERT_EQUAL_INT(TILE_EMPTY, map[29][14]);
 }
 
+static void test_extra_life_not_awarded_below_threshold(void) {
+    Player p;
+    player_init(&p);
+    p.score = 1499;
+    player_check_extra_life(&p);
+    TEST_ASSERT_EQUAL_INT(3, p.lives);
+    TEST_ASSERT_EQUAL_INT(0, p.extra_life_flags);
+}
+
+static void test_extra_life_awarded_at_1500(void) {
+    Player p;
+    player_init(&p);
+    p.score = 1500;
+    player_check_extra_life(&p);
+    TEST_ASSERT_EQUAL_INT(4, p.lives);
+    TEST_ASSERT_EQUAL_INT(1, p.extra_life_flags & 1);
+}
+
+static void test_extra_life_not_awarded_twice_at_1500(void) {
+    Player p;
+    player_init(&p);
+    p.score = 1500;
+    player_check_extra_life(&p);
+    player_check_extra_life(&p);
+    TEST_ASSERT_EQUAL_INT(4, p.lives);
+}
+
+static void test_extra_life_awarded_at_5000(void) {
+    Player p;
+    player_init(&p);
+    p.score = 5000;
+    player_check_extra_life(&p);
+    TEST_ASSERT_EQUAL_INT(5, p.lives);  /* both thresholds crossed */
+    TEST_ASSERT_EQUAL_INT(3, p.extra_life_flags & 3);
+}
+
+static void test_extra_life_caps_at_max(void) {
+    Player p;
+    player_init(&p);
+    p.lives = 5;
+    p.score = 5000;
+    player_check_extra_life(&p);
+    TEST_ASSERT_EQUAL_INT(5, p.lives);
+}
+
+static void test_extra_life_flags_reset_on_init(void) {
+    Player p;
+    player_init(&p);
+    p.score = 5000;
+    player_check_extra_life(&p);
+    player_init(&p);
+    TEST_ASSERT_EQUAL_INT(0, p.extra_life_flags);
+}
+
 int main(void) {
     RUN_TEST(test_wrap_col_normal);
     RUN_TEST(test_wrap_col_negative);
@@ -120,5 +174,11 @@ int main(void) {
     RUN_TEST(test_large_dt_consumes_multiple_player_tiles);
     RUN_TEST(test_very_large_dt_keeps_player_move_t_bounded);
     RUN_TEST(test_player_init_position);
+    RUN_TEST(test_extra_life_not_awarded_below_threshold);
+    RUN_TEST(test_extra_life_awarded_at_1500);
+    RUN_TEST(test_extra_life_not_awarded_twice_at_1500);
+    RUN_TEST(test_extra_life_awarded_at_5000);
+    RUN_TEST(test_extra_life_caps_at_max);
+    RUN_TEST(test_extra_life_flags_reset_on_init);
     TESTS_SUMMARY();
 }
