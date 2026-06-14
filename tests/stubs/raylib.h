@@ -61,6 +61,10 @@ static inline void  UnloadMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
 static inline void  PlayMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  PauseMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
+static inline void  ResumeMusicStream(Music m)
+    { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
 static inline void  UpdateMusicStream(Music m)
     { if (!IsMusicValid(m)) raylib_stub_invalid_music_operations++; }
 static inline void  SetMusicVolume(Music m, float v)
