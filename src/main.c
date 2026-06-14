@@ -11,8 +11,8 @@
 #include <time.h>
 
 #define HISCORE_PATH      "muncher_hiscore.dat"
-#define SCREEN_W          (MAP_COLS * TILE_SIZE)
-#define SCREEN_H          (MAP_ROWS * TILE_SIZE + 60)
+#define GAME_W            (MAP_COLS * TILE_SIZE)
+#define GAME_H            (MAP_ROWS * TILE_SIZE + 60)
 #define MAP_OFFSET_Y      60
 #define DEATH_FREEZE_SECS 1.5f
 
@@ -40,15 +40,34 @@ static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
     if (map_dots_remaining() == 0) *you_win = 1;
 }
 
+static void draw_game_to_screen(RenderTexture2D target) {
+    float sw    = (float)GetScreenWidth();
+    float sh    = (float)GetScreenHeight();
+    float scale = sw / GAME_W;
+    if (sh / GAME_H < scale) scale = sh / GAME_H;
+    Rectangle src = { 0.0f, 0.0f, (float)GAME_W, -(float)GAME_H };
+    Rectangle dst = {
+        (sw - GAME_W * scale) / 2.0f,
+        (sh - GAME_H * scale) / 2.0f,
+        (float)GAME_W * scale,
+        (float)GAME_H * scale
+    };
+    DrawTexturePro(target.texture, src, dst, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+}
+
 int main(void) {
-    InitWindow(SCREEN_W, SCREEN_H, "Muncher");
+    InitWindow(GAME_W, GAME_H, "Muncher");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
     SetTargetFPS(60);
     audio_init();
     srand((unsigned)time(NULL));
 
+    RenderTexture2D target = LoadRenderTexture(GAME_W, GAME_H);
+    SetTextureFilter(target.texture, TEXTURE_FILTER_POINT);
+
     int level = 1;
     if (!map_generate(level)) {
+        UnloadRenderTexture(target);
         audio_close();
         CloseWindow();
         return 1;
@@ -134,15 +153,15 @@ int main(void) {
             }
         }
 
-        BeginDrawing();
+        BeginTextureMode(target);
             ClearBackground(BLACK);
             if (state == STATE_TITLE) {
                 int tw = MeasureText("MUNCHER", 60);
                 DrawText("MUNCHER",
-                         (SCREEN_W - tw) / 2, SCREEN_H / 2 - 50, 60, YELLOW);
+                         (GAME_W - tw) / 2, GAME_H / 2 - 50, 60, YELLOW);
                 tw = MeasureText("Press ENTER to start", 24);
                 DrawText("Press ENTER to start",
-                         (SCREEN_W - tw) / 2, SCREEN_H / 2 + 20, 24, WHITE);
+                         (GAME_W - tw) / 2, GAME_H / 2 + 20, 24, WHITE);
             } else {
                 DrawText("MUNCHER", 10, 4, 20, YELLOW);
                 DrawText(TextFormat("SCORE: %d",  player.score), 130, 4, 20, WHITE);
@@ -157,27 +176,33 @@ int main(void) {
                 if (you_win) {
                     int tw = MeasureText("LEVEL CLEAR!", 36);
                     DrawText("LEVEL CLEAR!",
-                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 28, 36, YELLOW);
+                             (GAME_W - tw) / 2, GAME_H / 2 - 28, 36, YELLOW);
                     DrawText("Press R for next level",
-                             SCREEN_W / 2 - 115, SCREEN_H / 2 + 18, 20, WHITE);
+                             GAME_W / 2 - 115, GAME_H / 2 + 18, 20, WHITE);
                 }
                 if (game_over) {
                     int tw = MeasureText("GAME OVER", 40);
                     DrawText("GAME OVER",
-                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 20, 40, RED);
+                             (GAME_W - tw) / 2, GAME_H / 2 - 20, 40, RED);
                     DrawText("Press R to restart",
-                             SCREEN_W / 2 - 95, SCREEN_H / 2 + 30, 20, WHITE);
+                             GAME_W / 2 - 95, GAME_H / 2 + 30, 20, WHITE);
                 }
                 if (paused) {
                     int tw = MeasureText("PAUSED", 36);
                     DrawText("PAUSED",
-                             (SCREEN_W - tw) / 2, SCREEN_H / 2 - 18, 36, WHITE);
+                             (GAME_W - tw) / 2, GAME_H / 2 - 18, 36, WHITE);
                 }
             }
+        EndTextureMode();
+
+        BeginDrawing();
+            ClearBackground(BLACK);
+            draw_game_to_screen(target);
         EndDrawing();
     }
 
     hiscore_save(HISCORE_PATH, hiscore);
+    UnloadRenderTexture(target);
     audio_close();
     CloseWindow();
     return 0;

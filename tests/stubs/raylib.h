@@ -16,6 +16,9 @@ typedef struct {
 } Vector2;
 typedef struct { int ctx; }                  Music;
 typedef struct { int ctx; }                  Sound;
+typedef struct { float x; float y; float width; float height; } Rectangle;
+typedef struct { unsigned int id; int width; int height; } Texture2D;
+typedef struct { Texture2D texture; } RenderTexture2D;
 
 static int raylib_stub_music_load_success = 1;
 static int raylib_stub_sound_load_success = 1;
@@ -54,6 +57,18 @@ static inline void SetWindowState(unsigned int flags) { (void)flags; }
 static inline int  IsWindowMaximized(void)            { return 0; }
 static inline void RestoreWindow(void)                {}
 static inline void ToggleFullscreen(void)             {}
+static inline int  GetScreenWidth(void)               { return 560; }
+static inline int  GetScreenHeight(void)              { return 680; }
+static inline RenderTexture2D LoadRenderTexture(int w, int h)
+    { (void)w; (void)h; return (RenderTexture2D){0}; }
+static inline void UnloadRenderTexture(RenderTexture2D t) { (void)t; }
+static inline void SetTextureFilter(Texture2D t, int f) { (void)t; (void)f; }
+static inline void BeginTextureMode(RenderTexture2D t) { (void)t; }
+static inline void EndTextureMode(void)               {}
+static inline void DrawTexturePro(Texture2D t, Rectangle src, Rectangle dst,
+    Vector2 origin, float rot, Color tint)
+    { (void)t;(void)src;(void)dst;(void)origin;(void)rot;(void)tint; }
+#define TEXTURE_FILTER_POINT 0
 
 static inline void DrawRectangle(int x, int y, int w, int h, Color c)
     { (void)x;(void)y;(void)w;(void)h;(void)c; }
