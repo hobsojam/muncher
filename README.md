@@ -4,15 +4,21 @@ A Pac-Man clone built in C with [raylib](https://www.raylib.com/).
 
 ## Gameplay
 
-- Eat all dots to clear the maze
+- Eat all dots to clear the maze; levels are procedurally generated
 - Power pellets (large dots) turn ghosts blue — eat them for bonus points
 - Avoid ghosts in normal mode; you have 3 lives before game over
+- Wall colour changes every 5 levels
 
 ### Controls
 
 | Key | Action |
 |-----|--------|
 | Arrow keys | Move |
+| `R` | Next level (on level clear) / Restart (on game over) |
+| `M` | Toggle music mute |
+| `N` | Toggle SFX mute |
+| `[` / `]` | Music volume down / up |
+| `,` / `.` | SFX volume down / up |
 
 ### Scoring
 
@@ -62,14 +68,18 @@ make lint
 ```text
 src/
   main.c          # entry point and game loop
-  map.h/map.c     # tile grid, map data, rendering
+  map.h/map.c     # procedural tile grid, generation, rendering
   player.h/.c     # player movement and input
   ghost.h/.c      # ghost AI (scatter, chase, frightened modes)
   lives.h/.c      # life decrement, respawn, game over
   collision.h/.c  # ghost collision detection and scoring
+  audio.h/.c      # music and sound effects
+assets/
+  music/          # theme.ogg (looping background music)
+  sounds/         # chomp, power, ghost_eat, death WAVs
 tests/
   test_*.c        # unit tests (custom framework, no dependencies)
-  stubs/raylib.h  # no-op raylib stubs for headless test builds
+  stubs/          # no-op stubs for raylib and audio (headless builds)
 Makefile
 ```
 
