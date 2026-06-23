@@ -178,7 +178,7 @@ int main(void) {
                             level = 1;
                             player_init(&player);
                             ghosts_init_level(ghosts, level);
-                            fruit_init(&fruit);
+                            fruit_init(&fruit, level);
                             total_dots  = map_dots_remaining();
                             you_win     = 0;
                             game_over   = 0;
@@ -195,7 +195,7 @@ int main(void) {
                             level = 1;
                             player_init(&player);
                             ghosts_init_level(ghosts, level);
-                            fruit_init(&fruit);
+                            fruit_init(&fruit, level);
                             total_dots  = map_dots_remaining();
                             you_win     = 0;
                             game_over   = 0;
