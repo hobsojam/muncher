@@ -217,12 +217,17 @@ int main(void) {
         BeginTextureMode(target);
             ClearBackground(BLACK);
             if (state == STATE_TITLE) {
+                float t = (float)GetTime();
+                const Color title_colors[4] = {RED, PINK, SKYBLUE, ORANGE};
+                Color title_col = title_colors[(int)(t * 2.0f) % 4];
                 int tw = MeasureText("MUNCHER", 60);
                 DrawText("MUNCHER",
-                         (GAME_W - tw) / 2, GAME_H / 2 - 50, 60, YELLOW);
-                tw = MeasureText("Press ENTER to start", 24);
-                DrawText("Press ENTER to start",
-                         (GAME_W - tw) / 2, GAME_H / 2 + 20, 24, WHITE);
+                         (GAME_W - tw) / 2, GAME_H / 2 - 50, 60, title_col);
+                if ((int)(t * 2.0f) % 2 == 0) {
+                    tw = MeasureText("PRESS ENTER TO START", 24);
+                    DrawText("PRESS ENTER TO START",
+                             (GAME_W - tw) / 2, GAME_H / 2 + 20, 24, WHITE);
+                }
             } else {
                 DrawText("MUNCHER", 10, 4, 20, YELLOW);
                 DrawText(TextFormat("SCORE: %d",  player.score), 130, 4, 20, WHITE);
