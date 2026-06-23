@@ -23,6 +23,10 @@ int ghost_frighten_flashing(float t);
 
 #ifdef MUNCHER_TEST
 float ghost_internal_fright_timer(void);
+float ghost_internal_speed_normal(void);
+float ghost_internal_speed_frightened(void);
+float ghost_internal_frightened_secs(void);
+float ghost_internal_mode_duration(int idx);
 #endif
 
 #endif

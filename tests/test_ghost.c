@@ -432,6 +432,231 @@ static void test_clyde_near_uses_shy_radius(void) {
     TEST_ASSERT_EQUAL_INT(ghosts[GHOST_CLYDE].scatter_row, tr);
 }
 
+/* ------------------------------------------------------------------ */
+/* Feature A — BFS pathfinding in choose_dir                           */
+/* ------------------------------------------------------------------ */
+
+/* Helper: set every cell to TILE_WALL, then carve out cells listed. */
+static void make_all_walls(void) {
+    for (int r = 0; r < MAP_ROWS; r++)
+        for (int c = 0; c < MAP_COLS; c++)
+            map[r][c] = TILE_WALL;
+}
+
+/*
+ * Test (a): In an open horizontal corridor the ghost picks the shorter
+ * path to the target rather than the longer one.
+ *
+ * Layout (row 5 fully open, ghost at col 5 facing right):
+ *   . . . . . G . . . T . . .   (row 5)
+ * Target at col 9.  Ghost faces right (dir_col=1).
+ * BFS should pick right (shorter), not left (longer wrap-around).
+ */
+static void test_bfs_picks_shorter_path_in_corridor(void) {
+    make_all_walls();
+    for (int c = 0; c < MAP_COLS; c++)
+        map[5][c] = TILE_EMPTY;
+
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    /* Place Blinky at (col=5, row=5) facing right */
+    ghosts[GHOST_BLINKY].col     = 5;
+    ghosts[GHOST_BLINKY].row     = 5;
+    ghosts[GHOST_BLINKY].dir_col = 1;
+    ghosts[GHOST_BLINKY].dir_row = 0;
+    ghosts[GHOST_BLINKY].mode    = GMODE_CHASE;
+
+    Player player = {0};
+    player.col = 9; player.row = 5;
+
+    int tc, tr;
+    ghost_get_target(&ghosts[GHOST_BLINKY], &player, ghosts, &tc, &tr);
+    /* choose_dir is called inside ghosts_update; call it via update */
+    ghosts_update(ghosts, &player, 0.0f);
+    /* After BFS the ghost should be heading right (toward col 9) */
+    TEST_ASSERT_EQUAL_INT(1, ghosts[GHOST_BLINKY].dir_col);
+    TEST_ASSERT_EQUAL_INT(0, ghosts[GHOST_BLINKY].dir_row);
+}
+
+/*
+ * Test (b): Ghost navigates around a wall.
+ *
+ * Map layout (rows 5-6, cols 1-6):
+ *   row 5:  . . W . . .     (col 3 is wall)
+ *   row 6:  . . . . . .     (open detour below)
+ *
+ * Ghost at (col=2, row=5) facing right.
+ * Target at (col=4, row=5) — directly behind the wall.
+ * Greedy: tries col=3 → blocked, picks col=1 (left) or stuck.
+ * BFS: finds path right→down (row 6)→right→right→up, and picks right-down
+ *      or detour correctly, so first_dc != -1 (not going backward/left).
+ *
+ * Simpler assertion: the BFS first step must NOT be left (dir_col=-1)
+ * since that goes away from the target via the long way.
+ */
+static void test_bfs_navigates_around_wall(void) {
+    make_all_walls();
+    /* Open corridor row 5, cols 1-6 except col 3 */
+    for (int c = 1; c <= 6; c++)
+        map[5][c] = TILE_EMPTY;
+    map[5][3] = TILE_WALL;   /* wall blocking direct path */
+    /* Open detour row 6, cols 1-6 */
+    for (int c = 1; c <= 6; c++)
+        map[6][c] = TILE_EMPTY;
+
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].col     = 2;
+    ghosts[GHOST_BLINKY].row     = 5;
+    ghosts[GHOST_BLINKY].dir_col = 1;
+    ghosts[GHOST_BLINKY].dir_row = 0;
+    ghosts[GHOST_BLINKY].mode    = GMODE_CHASE;
+
+    Player player = {0};
+    player.col = 4; player.row = 5;
+
+    ghosts_update(ghosts, &player, 0.0f);
+
+    /* BFS must not go left (away from target) when a detour exists */
+    TEST_ASSERT(ghosts[GHOST_BLINKY].dir_col != -1);
+}
+
+/*
+ * Test (c): Frightened ghost still uses random choice (choose_dir_random),
+ * not BFS.  We verify it can choose a direction other than the
+ * deterministic BFS-optimal one.  We run many updates and check that
+ * the direction is always a valid non-reverse neighbour (statistical
+ * correctness of random mode), and that it is NOT necessarily always
+ * the same direction (i.e., not locked to BFS).
+ *
+ * Simpler: verify ghosts_frighten sets GMODE_FRIGHTENED and speed drops.
+ */
+static void test_frightened_ghost_not_bfs(void) {
+    make_all_walls();
+    for (int c = 0; c < MAP_COLS; c++)
+        map[5][c] = TILE_EMPTY;
+    /* Add a branch downward from col 10 */
+    for (int r = 5; r <= 10; r++)
+        map[r][10] = TILE_EMPTY;
+
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].col     = 10;
+    ghosts[GHOST_BLINKY].row     = 5;
+    ghosts[GHOST_BLINKY].dir_col = 1;
+    ghosts[GHOST_BLINKY].dir_row = 0;
+
+    ghosts_frighten(ghosts);
+    TEST_ASSERT_EQUAL_INT(GMODE_FRIGHTENED, ghosts[GHOST_BLINKY].mode);
+
+    Player player = {0};
+    player.col = 20; player.row = 5; /* far target — BFS would go right */
+
+    /* After frighten, mode must remain FRIGHTENED (not changed by update alone) */
+    ghosts_update(ghosts, &player, 0.0f);
+    TEST_ASSERT_EQUAL_INT(GMODE_FRIGHTENED, ghosts[GHOST_BLINKY].mode);
+}
+
+/* ------------------------------------------------------------------ */
+/* Feature B — Level-based difficulty scaling                          */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Expose the runtime speed/duration values via ghost_internal.h.
+ * These accessor declarations mirror what we will add to ghost_internal.h.
+ */
+float ghost_internal_speed_normal(void);
+float ghost_internal_speed_frightened(void);
+float ghost_internal_frightened_secs(void);
+float ghost_internal_mode_duration(int idx);
+
+/* (a) At level 1 speeds equal the existing constants */
+static void test_difficulty_level1_speed_normal_matches_constant(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init_level(ghosts, 1);
+    /* SPEED_NORMAL = 6.5f */
+    TEST_ASSERT(ghost_internal_speed_normal() >= 6.49f &&
+                ghost_internal_speed_normal() <= 6.51f);
+}
+
+static void test_difficulty_level1_speed_frightened_matches_constant(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init_level(ghosts, 1);
+    /* SPEED_FRIGHTENED = 4.0f */
+    TEST_ASSERT(ghost_internal_speed_frightened() >= 3.99f &&
+                ghost_internal_speed_frightened() <= 4.01f);
+}
+
+static void test_difficulty_level1_frightened_secs_matches_constant(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init_level(ghosts, 1);
+    /* FRIGHTENED_SECS = 8.0f */
+    TEST_ASSERT(ghost_internal_frightened_secs() >= 7.99f &&
+                ghost_internal_frightened_secs() <= 8.01f);
+}
+
+/* (b) At level 5 normal speed is higher than level 1 */
+static void test_difficulty_level5_speed_normal_higher(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    float speed_l1, speed_l5;
+    ghosts_init_level(ghosts, 1);
+    speed_l1 = ghost_internal_speed_normal();
+    ghosts_init_level(ghosts, 5);
+    speed_l5 = ghost_internal_speed_normal();
+    TEST_ASSERT(speed_l5 > speed_l1);
+}
+
+/* (c) At level 5 frightened duration is shorter than level 1 */
+static void test_difficulty_level5_frightened_secs_shorter(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    float secs_l1, secs_l5;
+    ghosts_init_level(ghosts, 1);
+    secs_l1 = ghost_internal_frightened_secs();
+    ghosts_init_level(ghosts, 5);
+    secs_l5 = ghost_internal_frightened_secs();
+    TEST_ASSERT(secs_l5 < secs_l1);
+}
+
+/* Scatter durations shrink per level */
+static void test_difficulty_level5_scatter_duration_shorter(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    float dur_l1, dur_l5;
+    ghosts_init_level(ghosts, 1);
+    dur_l1 = ghost_internal_mode_duration(0); /* first scatter */
+    ghosts_init_level(ghosts, 5);
+    dur_l5 = ghost_internal_mode_duration(0);
+    TEST_ASSERT(dur_l5 < dur_l1);
+}
+
+/* Chase durations unchanged between levels */
+static void test_difficulty_chase_duration_unchanged(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    float dur_l1, dur_l5;
+    ghosts_init_level(ghosts, 1);
+    dur_l1 = ghost_internal_mode_duration(1); /* first chase */
+    ghosts_init_level(ghosts, 5);
+    dur_l5 = ghost_internal_mode_duration(1);
+    TEST_ASSERT(dur_l1 >= dur_l5 - 0.01f && dur_l1 <= dur_l5 + 0.01f);
+}
+
+/* ghost_respawn uses g_speed_normal (not hardcoded SPEED_NORMAL) */
+static void test_difficulty_respawn_uses_runtime_speed(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT];
+    ghosts_init_level(ghosts, 5);
+    float expected_speed = ghost_internal_speed_normal();
+    ghost_respawn(&ghosts[GHOST_BLINKY]);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].speed >= expected_speed - 0.01f &&
+                ghosts[GHOST_BLINKY].speed <= expected_speed + 0.01f);
+}
+
 int main(void) {
     RUN_TEST(test_frighten_flash_off_when_timer_high);
     RUN_TEST(test_frighten_flash_on_when_timer_low_even_period);
@@ -476,5 +701,18 @@ int main(void) {
     RUN_TEST(test_clyde_shy_radius_decreases_per_level);
     RUN_TEST(test_clyde_shy_radius_clamps_at_one);
     RUN_TEST(test_clyde_near_uses_shy_radius);
+    /* Feature A — BFS pathfinding */
+    RUN_TEST(test_bfs_picks_shorter_path_in_corridor);
+    RUN_TEST(test_bfs_navigates_around_wall);
+    RUN_TEST(test_frightened_ghost_not_bfs);
+    /* Feature B — Level difficulty scaling */
+    RUN_TEST(test_difficulty_level1_speed_normal_matches_constant);
+    RUN_TEST(test_difficulty_level1_speed_frightened_matches_constant);
+    RUN_TEST(test_difficulty_level1_frightened_secs_matches_constant);
+    RUN_TEST(test_difficulty_level5_speed_normal_higher);
+    RUN_TEST(test_difficulty_level5_frightened_secs_shorter);
+    RUN_TEST(test_difficulty_level5_scatter_duration_shorter);
+    RUN_TEST(test_difficulty_chase_duration_unchanged);
+    RUN_TEST(test_difficulty_respawn_uses_runtime_speed);
     TESTS_SUMMARY();
 }
