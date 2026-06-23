@@ -5,19 +5,30 @@
 #include "raylib.h"
 #include "audio.h"
 #include <stdlib.h>
+#include <string.h>
 
+/* Level-1 baseline constants (kept for documentation / fallback reference) */
 #define SPEED_NORMAL     6.5f
 #define SPEED_FRIGHTENED 4.0f
 #define FRIGHTENED_SECS  8.0f
 #define MAX_TILE_STEPS_PER_UPDATE 8
 
-// Mode schedule: alternating scatter/chase, then permanent chase
-static const float      MODE_DURATIONS[] = { 7.0f, 20.0f, 7.0f, 20.0f, 5.0f, 20.0f, 5.0f, 99999.0f };
+/* Mode schedule: alternating scatter/chase, then permanent chase.
+ * Indices 0,2,4,6 are scatter; 1,3,5,7 are chase.
+ * The base scatter durations (7,7,5,5) are scaled per level in
+ * ghosts_init_level; chase durations remain fixed.                    */
+static const float      BASE_MODE_DURATIONS[] = { 7.0f, 20.0f, 7.0f, 20.0f, 5.0f, 20.0f, 5.0f, 99999.0f };
 static const GhostMode  MODE_SEQUENCE[]  = {
     GMODE_SCATTER, GMODE_CHASE, GMODE_SCATTER, GMODE_CHASE,
     GMODE_SCATTER, GMODE_CHASE, GMODE_SCATTER, GMODE_CHASE
 };
 #define MODE_COUNT 8
+
+/* Runtime difficulty values — set in ghosts_init_level */
+static float g_speed_normal      = SPEED_NORMAL;
+static float g_speed_frightened  = SPEED_FRIGHTENED;
+static float g_frightened_secs   = FRIGHTENED_SECS;
+static float g_mode_durations[MODE_COUNT];
 
 static int       global_index  = 0;
 static float     global_timer  = 0.0f;
@@ -50,25 +61,59 @@ int ghost_dist_sq(int c1, int r1, int c2, int r2) {
     return dc*dc + dr*dr;
 }
 
-// Pick the direction (no reversing) that minimises distance to (tc, tr).
-// Falls back to reversing if no other valid direction exists.
+// BFS to find the first direction on the shortest path to (tc, tr).
+// Does not allow reversing (classic Pac-Man rule).
+// Falls back to greedy distance-minimising heuristic if target unreachable.
 static void choose_dir(Ghost *g, int tc, int tr) {
+    typedef struct { int col, row, first_dc, first_dr; } BFSNode;
+    BFSNode queue[MAP_COLS * MAP_ROWS];
+    int visited[MAP_ROWS][MAP_COLS];
+    memset(visited, 0, sizeof(visited));
+
+    int head = 0, tail = 0;
     int rev_dc = -g->dir_col;
     int rev_dr = -g->dir_row;
-    int best_dc = 0;
-    int best_dr = 0;
-    int best_d = -1;
 
+    visited[g->row][g->col] = 1;
+
+    /* Seed BFS with valid non-reverse neighbours */
     for (int i = 0; i < 4; i++) {
-        int dc = DIRS[i][0];
-        int dr = DIRS[i][1];
+        int dc = DIRS[i][0], dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
-        if (!ghost_can_enter(g->col + dc, g->row + dr)) continue;
-        int d = ghost_dist_sq(g->col + dc, g->row + dr, tc, tr);
+        int nc = ghost_wrap_col(g->col + dc), nr = g->row + dr;
+        if (!ghost_can_enter(nc, nr) || visited[nr][nc]) continue;
+        visited[nr][nc] = 1;
+        queue[tail++] = (BFSNode){nc, nr, dc, dr};
+    }
+
+    while (head < tail) {
+        BFSNode cur = queue[head++];
+        if (cur.col == tc && cur.row == tr) {
+            g->dir_col = cur.first_dc;
+            g->dir_row = cur.first_dr;
+            return;
+        }
+        for (int i = 0; i < 4; i++) {
+            int dc = DIRS[i][0], dr = DIRS[i][1];
+            int nc = ghost_wrap_col(cur.col + dc), nr = cur.row + dr;
+            if (!ghost_can_enter(nc, nr) || visited[nr][nc]) continue;
+            visited[nr][nc] = 1;
+            queue[tail++] = (BFSNode){nc, nr, cur.first_dc, cur.first_dr};
+        }
+    }
+
+    /* Fallback: greedy distance-minimising (target unreachable via BFS) */
+    int best_dc = 0, best_dr = 0, best_d = -1;
+    for (int i = 0; i < 4; i++) {
+        int dc = DIRS[i][0], dr = DIRS[i][1];
+        if (dc == rev_dc && dr == rev_dr) continue;
+        int nc = ghost_wrap_col(g->col + dc), nr = g->row + dr;
+        if (!ghost_can_enter(nc, nr)) continue;
+        int d = ghost_dist_sq(nc, nr, tc, tr);
         if (best_d < 0 || d < best_d) { best_d = d; best_dc = dc; best_dr = dr; }
     }
-    // fallback: allow reversing if every other direction is blocked
-    if (best_d < 0 && ghost_can_enter(g->col + rev_dc, g->row + rev_dr)) {
+    /* Last resort: allow reversing if every other direction is blocked */
+    if (best_d < 0 && ghost_can_enter(ghost_wrap_col(g->col + rev_dc), g->row + rev_dr)) {
         best_dc = rev_dc; best_dr = rev_dr;
     }
     g->dir_col = best_dc;
@@ -148,29 +193,60 @@ void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level) {
     global_mode  = GMODE_SCATTER;
     fright_timer = 0.0f;
 
+    /* --- Feature B: compute runtime difficulty values from level --- */
+    {
+        float lvl = (float)(level - 1);
+
+        /* Normal speed: base 6.5, +0.20 per level above 1, cap 10.0 */
+        float sn = SPEED_NORMAL + lvl * 0.20f;
+        if (sn > 10.0f) sn = 10.0f;
+        g_speed_normal = sn;
+
+        /* Frightened speed: base 4.0, +0.10 per level, cap 6.5 */
+        float sf = SPEED_FRIGHTENED + lvl * 0.10f;
+        if (sf > 6.5f) sf = 6.5f;
+        g_speed_frightened = sf;
+
+        /* Frightened duration: base 8.0, -0.50 per level, floor 3.0 */
+        float fr = FRIGHTENED_SECS - lvl * 0.50f;
+        if (fr < 3.0f) fr = 3.0f;
+        g_frightened_secs = fr;
+
+        /* Mode durations: scale scatter entries (0,2,4,6), keep chase */
+        float scatter_scale = 1.0f - lvl * 0.08f;
+        if (scatter_scale < 0.2f) scatter_scale = 0.2f;
+        for (int i = 0; i < MODE_COUNT; i++) {
+            if (i % 2 == 0) { /* scatter slot */
+                g_mode_durations[i] = BASE_MODE_DURATIONS[i] * scatter_scale;
+            } else {           /* chase slot — unchanged */
+                g_mode_durations[i] = BASE_MODE_DURATIONS[i];
+            }
+        }
+    }
+
     int shy = 9 - level;
     if (shy < 1) shy = 1;
 
-    // Blinky starts just above the house door, immediately active
+    /* Blinky starts just above the house door, immediately active */
     ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY, GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
-                                    -1, 0, 0.0f, SPEED_NORMAL, 0,
+                                    -1, 0, 0.0f, g_speed_normal, 0,
                                     GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f, 0, 0 };
 
-    // Pinky, Inky, Clyde start inside the house, released on a timer
+    /* Pinky, Inky, Clyde start inside the house, released on a timer */
     ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
-                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    0, 1, 0.0f, g_speed_normal, 0,
                                     GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f, 0, 0 };
 
     ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, GHOST_HOUSE_MID_ROW,
                                     11, GHOST_HOUSE_MID_ROW,
-                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    0, 1, 0.0f, g_speed_normal, 0,
                                     GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f, 0, 0 };
 
     ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, GHOST_HOUSE_MID_ROW,
                                     16, GHOST_HOUSE_MID_ROW,
-                                    0, 1, 0.0f, SPEED_NORMAL, 0,
+                                    0, 1, 0.0f, g_speed_normal, 0,
                                     GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f, 0, shy };
 }
 
@@ -179,9 +255,9 @@ void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
 }
 
 void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
-    // Advance global mode timer
+    /* Advance global mode timer */
     global_timer += dt;
-    if (global_timer >= MODE_DURATIONS[global_index]) {
+    if (global_timer >= g_mode_durations[global_index]) {
         global_timer = 0.0f;
         if (global_index < MODE_COUNT - 1) global_index++;
         global_mode = MODE_SEQUENCE[global_index];
@@ -204,7 +280,7 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
             for (int i = 0; i < GHOST_COUNT; i++) {
                 if (ghosts[i].mode == GMODE_FRIGHTENED) {
                     ghosts[i].mode = global_mode;
-                    ghosts[i].speed = SPEED_NORMAL;
+                    ghosts[i].speed = g_speed_normal;
                 }
             }
         }
@@ -324,7 +400,7 @@ void ghost_respawn(Ghost *g) {
     g->dir_col      = 0;
     g->dir_row      = 1;
     g->move_t       = 0.0f;
-    g->speed        = SPEED_NORMAL;
+    g->speed        = g_speed_normal;
     g->moved        = 0;
     g->mode         = GMODE_HOUSE;
     g->release_timer = 3.0f;
@@ -335,16 +411,20 @@ int ghost_frighten_flashing(float t) {
 }
 
 #ifdef MUNCHER_TEST
-float ghost_internal_fright_timer(void) { return fright_timer; }
+float ghost_internal_fright_timer(void)      { return fright_timer;        }
+float ghost_internal_speed_normal(void)      { return g_speed_normal;      }
+float ghost_internal_speed_frightened(void)  { return g_speed_frightened;  }
+float ghost_internal_frightened_secs(void)   { return g_frightened_secs;   }
+float ghost_internal_mode_duration(int idx)  { return g_mode_durations[idx]; }
 #endif
 
 void ghosts_frighten(Ghost ghosts[GHOST_COUNT]) {
-    fright_timer = FRIGHTENED_SECS;
+    fright_timer = g_frightened_secs;
     for (int i = 0; i < GHOST_COUNT; i++) {
         if (ghosts[i].mode == GMODE_HOUSE || ghosts[i].mode == GMODE_EXITING) continue;
         ghosts[i].mode    = GMODE_FRIGHTENED;
-        ghosts[i].speed   = SPEED_FRIGHTENED;
-        // Reverse direction immediately
+        ghosts[i].speed   = g_speed_frightened;
+        /* Reverse direction immediately */
         ghosts[i].dir_col = -ghosts[i].dir_col;
         ghosts[i].dir_row = -ghosts[i].dir_row;
     }
