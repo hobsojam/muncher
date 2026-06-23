@@ -3,16 +3,30 @@
 #include "raylib.h"
 #include "audio.h"
 
-#define FRUIT_SECS 8.0f
-#define FRUIT_SCORE 100
+#define FRUIT_SECS       8.0f
+#define FRUIT_TYPE_COUNT 6
 
-void fruit_init(Fruit *f) {
+static const int fruit_scores[FRUIT_TYPE_COUNT] = {
+    100,   /* FRUIT_TYPE_CHERRY     */
+    300,   /* FRUIT_TYPE_STRAWBERRY */
+    500,   /* FRUIT_TYPE_PEACH      */
+    700,   /* FRUIT_TYPE_PRETZEL    */
+    1000,  /* FRUIT_TYPE_APPLE      */
+    2000   /* FRUIT_TYPE_GRAPES     */
+};
+
+void fruit_init(Fruit *f, int level) {
+    FruitType type = (FruitType)(level - 1);
+    if (type >= FRUIT_TYPE_COUNT) type = FRUIT_TYPE_GRAPES;
+    if (type < FRUIT_TYPE_CHERRY)  type = FRUIT_TYPE_CHERRY;
+
     f->col         = FRUIT_COL;
     f->row         = FRUIT_ROW;
     f->active      = 0;
     f->eaten       = 0;
     f->timer       = 0.0f;
-    f->score       = FRUIT_SCORE;
+    f->type        = type;
+    f->score       = fruit_scores[type];
     f->popup_timer = 0.0f;
     f->popup_col   = FRUIT_COL;
     f->popup_row   = FRUIT_ROW;
@@ -45,11 +59,21 @@ void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float
     }
 }
 
+static const Color fruit_colors[FRUIT_TYPE_COUNT] = {
+    {220, 20,  60,  255}, /* FRUIT_TYPE_CHERRY     — red         */
+    {255, 105, 180, 255}, /* FRUIT_TYPE_STRAWBERRY — hot pink    */
+    {255, 200, 100, 255}, /* FRUIT_TYPE_PEACH      — orange-yel  */
+    {205, 133, 63,  255}, /* FRUIT_TYPE_PRETZEL    — brown       */
+    {50,  205, 50,  255}, /* FRUIT_TYPE_APPLE      — green       */
+    {148, 0,   211, 255}  /* FRUIT_TYPE_GRAPES     — purple      */
+};
+
 void fruit_draw(const Fruit *f, int offset_x, int offset_y) {
     if (f->active) {
         int px = (int)((float)f->col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x;
         int py = (int)((float)f->row * TILE_SIZE + TILE_SIZE / 2.0f) + offset_y;
-        DrawCircle(px, py, TILE_SIZE / 2 - 2, (Color){220, 20, 60, 255});
+        Color c = fruit_colors[f->type];
+        DrawCircle(px, py, TILE_SIZE / 2 - 2, c);
     }
     if (f->popup_timer > 0.0f) {
         int fx = (int)((float)f->popup_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
