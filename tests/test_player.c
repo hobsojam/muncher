@@ -160,6 +160,33 @@ static void test_extra_life_flags_reset_on_init(void) {
     TEST_ASSERT_EQUAL_INT(0, p.extra_life_flags);
 }
 
+static void test_player_draw_alive_does_not_crash(void) {
+    map_init();
+    Player p;
+    player_init(&p);
+    /* death_progress = 0.0 means normal size; draw calls are no-ops in test stubs */
+    player_draw(&p, 0, 0, 0.0f);
+    TEST_ASSERT(1); /* reaching here without crash is the assertion */
+}
+
+static void test_player_draw_mid_shrink_does_not_crash(void) {
+    map_init();
+    Player p;
+    player_init(&p);
+    /* death_progress = 0.5 means half-size */
+    player_draw(&p, 0, 0, 0.5f);
+    TEST_ASSERT(1);
+}
+
+static void test_player_draw_fully_dead_does_not_crash(void) {
+    map_init();
+    Player p;
+    player_init(&p);
+    /* death_progress = 1.0 means radius <= 0, function should return early */
+    player_draw(&p, 0, 0, 1.0f);
+    TEST_ASSERT(1);
+}
+
 int main(void) {
     RUN_TEST(test_wrap_col_normal);
     RUN_TEST(test_wrap_col_negative);
@@ -180,5 +207,8 @@ int main(void) {
     RUN_TEST(test_extra_life_awarded_at_5000);
     RUN_TEST(test_extra_life_caps_at_max);
     RUN_TEST(test_extra_life_flags_reset_on_init);
+    RUN_TEST(test_player_draw_alive_does_not_crash);
+    RUN_TEST(test_player_draw_mid_shrink_does_not_crash);
+    RUN_TEST(test_player_draw_fully_dead_does_not_crash);
     TESTS_SUMMARY();
 }
