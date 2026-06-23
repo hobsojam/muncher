@@ -89,7 +89,7 @@ int main(void) {
     ghosts_init_level(ghosts, level);
 
     Fruit fruit;
-    fruit_init(&fruit);
+    fruit_init(&fruit, level);
     int       total_dots  = map_dots_remaining();
     int       hiscore     = hiscore_load(HISCORE_PATH);
     int       you_win     = 0;
@@ -148,7 +148,7 @@ int main(void) {
                     if (reset_ok) {
                         int was_win = you_win;
                         ghosts_init_level(ghosts, level);
-                        fruit_init(&fruit);
+                        fruit_init(&fruit, level);
                         total_dots  = map_dots_remaining();
                         you_win     = 0;
                         game_over   = 0;
