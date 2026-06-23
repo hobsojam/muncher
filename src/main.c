@@ -186,7 +186,7 @@ int main(void) {
                             ready_timer = READY_SECS;
                             paused      = 0;
                             pause_sel   = 0;
-                            state       = STATE_TITLE;
+                            state       = STATE_PLAYING;
                             audio_resume();
                         }
                     } else {
