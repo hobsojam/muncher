@@ -19,6 +19,22 @@
 
 typedef enum { STATE_TITLE = 0, STATE_PLAYING } GameState;
 
+typedef struct {
+    Player    *player;
+    Ghost     *ghosts;
+    Fruit     *fruit;
+    int       *level;
+    int       *total_dots;
+    int       *hiscore;
+    int       *you_win;
+    int       *game_over;
+    float     *death_timer;
+    float     *ready_timer;
+    int       *paused;
+    int       *pause_sel;
+    GameState *state;
+} GameCtx;
+
 static void game_update(Player *p, Ghost ghosts[], Fruit *fruit, int total_dots,
                         float dt, float *death_timer, float *ready_timer,
                         int *game_over, int *you_win) {
@@ -64,6 +80,74 @@ static void draw_game_to_screen(RenderTexture2D target) {
     DrawTexturePro(target.texture, src, dst, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
 }
 
+static void do_reset(GameCtx *c, int new_level, GameState new_state,
+                     int respawn, int resume_audio) {
+    hiscore_save(HISCORE_PATH, *c->hiscore);
+    if (!map_generate(new_level)) return;
+    *c->level = new_level;
+    if (respawn) player_respawn(c->player); else player_init(c->player);
+    ghosts_init_level(c->ghosts, *c->level);
+    fruit_init(c->fruit, *c->level);
+    *c->total_dots  = map_dots_remaining();
+    *c->you_win     = 0;
+    *c->game_over   = 0;
+    *c->death_timer = 0.0f;
+    *c->ready_timer = READY_SECS;
+    *c->paused      = 0;
+    *c->pause_sel   = 0;
+    *c->state       = new_state;
+    if (resume_audio) audio_resume();
+}
+
+static void draw_pause_overlay(int pause_sel) {
+    DrawRectangle(0, 0, GAME_W, GAME_H, (Color){0, 0, 0, 160});
+    int tw = MeasureText("PAUSED", 36);
+    DrawText("PAUSED", (GAME_W - tw) / 2, GAME_H / 2 - 80, 36, YELLOW);
+    const char *items[] = {"RESUME", "RESTART", "QUIT TO TITLE"};
+    for (int i = 0; i < 3; i++) {
+        Color c = (i == pause_sel) ? YELLOW : WHITE;
+        int iw = MeasureText(items[i], 24);
+        DrawText(items[i], (GAME_W - iw) / 2, GAME_H / 2 - 20 + i * 36, 24, c);
+    }
+    DrawText("UP/DOWN: navigate   ENTER: select",
+             GAME_W / 2 - 145, GAME_H / 2 + 100, 16, GRAY);
+}
+
+static void handle_playing_input(GameCtx *c, float dt) {
+    if (IsKeyPressed(KEY_M)) audio_toggle_music_mute();
+    if (IsKeyPressed(KEY_N)) audio_toggle_sfx_mute();
+    if (IsKeyPressed(KEY_LEFT_BRACKET))  audio_step_music_volume(-0.1f);
+    if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
+    if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
+    if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
+
+    if (c->player->score > *c->hiscore) *c->hiscore = c->player->score;
+
+    if (!*c->you_win && !*c->game_over && IsKeyPressed(KEY_P)) {
+        *c->paused = !*c->paused;
+        if (*c->paused) audio_pause();
+        else { *c->pause_sel = 0; audio_resume(); }
+    }
+
+    if (*c->you_win || *c->game_over) {
+        if (IsKeyPressed(KEY_R)) {
+            if (*c->you_win) do_reset(c, *c->level + 1, STATE_PLAYING, 1, 0);
+            else             do_reset(c, 1, STATE_TITLE, 0, 0);
+        }
+    } else if (*c->paused) {
+        if (IsKeyPressed(KEY_UP))   *c->pause_sel = (*c->pause_sel + 2) % 3;
+        if (IsKeyPressed(KEY_DOWN)) *c->pause_sel = (*c->pause_sel + 1) % 3;
+        if (IsKeyPressed(KEY_ENTER)) {
+            if      (*c->pause_sel == 0) { *c->paused = 0; *c->pause_sel = 0; audio_resume(); }
+            else if (*c->pause_sel == 1) do_reset(c, 1, STATE_PLAYING, 0, 1);
+            else                         do_reset(c, 1, STATE_TITLE,   0, 1);
+        }
+    } else {
+        game_update(c->player, c->ghosts, c->fruit, *c->total_dots, dt,
+                    c->death_timer, c->ready_timer, c->game_over, c->you_win);
+    }
+}
+
 int main(void) {
     InitWindow(GAME_W, GAME_H, "Muncher");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -100,6 +184,12 @@ int main(void) {
     int       pause_sel   = 0;
     GameState state       = STATE_TITLE;
 
+    GameCtx ctx = {
+        &player, ghosts, &fruit, &level, &total_dots, &hiscore,
+        &you_win, &game_over, &death_timer, &ready_timer,
+        &paused, &pause_sel, &state
+    };
+
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
         audio_update();
@@ -110,108 +200,9 @@ int main(void) {
         }
 
         if (state == STATE_TITLE) {
-            if (IsKeyPressed(KEY_ENTER)) {
-                state = STATE_PLAYING;
-            }
+            if (IsKeyPressed(KEY_ENTER)) state = STATE_PLAYING;
         } else {
-            if (IsKeyPressed(KEY_M)) audio_toggle_music_mute();
-            if (IsKeyPressed(KEY_N)) audio_toggle_sfx_mute();
-            if (IsKeyPressed(KEY_LEFT_BRACKET))  audio_step_music_volume(-0.1f);
-            if (IsKeyPressed(KEY_RIGHT_BRACKET)) audio_step_music_volume( 0.1f);
-            if (IsKeyPressed(KEY_COMMA))  audio_step_sfx_volume(-0.1f);
-            if (IsKeyPressed(KEY_PERIOD)) audio_step_sfx_volume( 0.1f);
-
-            if (player.score > hiscore) hiscore = player.score;
-
-            if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
-                paused = !paused;
-                if (paused) {
-                    audio_pause();
-                } else {
-                    pause_sel = 0;
-                    audio_resume();
-                }
-            }
-
-            if (you_win || game_over) {
-                if (IsKeyPressed(KEY_R)) {
-                    hiscore_save(HISCORE_PATH, hiscore);
-                    int reset_ok = 0;
-                    if (you_win) {
-                        int next_level = level + 1;
-                        if (map_generate(next_level)) {
-                            level = next_level;
-                            player_respawn(&player);
-                            reset_ok = 1;
-                        }
-                    } else {
-                        if (map_generate(1)) {
-                            level = 1;
-                            player_init(&player);
-                            reset_ok = 1;
-                        }
-                    }
-                    if (reset_ok) {
-                        int was_win = you_win;
-                        ghosts_init_level(ghosts, level);
-                        fruit_init(&fruit, level);
-                        total_dots  = map_dots_remaining();
-                        you_win     = 0;
-                        game_over   = 0;
-                        death_timer = 0.0f;
-                        ready_timer = READY_SECS;
-                        paused      = 0;
-                        state       = was_win ? STATE_PLAYING : STATE_TITLE;
-                    }
-                }
-            } else if (paused) {
-                if (IsKeyPressed(KEY_UP))   pause_sel = (pause_sel + 2) % 3;
-                if (IsKeyPressed(KEY_DOWN)) pause_sel = (pause_sel + 1) % 3;
-                if (IsKeyPressed(KEY_ENTER)) {
-                    if (pause_sel == 0) {
-                        paused = 0;
-                        pause_sel = 0;
-                        audio_resume();
-                    } else if (pause_sel == 1) {
-                        hiscore_save(HISCORE_PATH, hiscore);
-                        if (map_generate(1)) {
-                            level = 1;
-                            player_init(&player);
-                            ghosts_init_level(ghosts, level);
-                            fruit_init(&fruit, level);
-                            total_dots  = map_dots_remaining();
-                            you_win     = 0;
-                            game_over   = 0;
-                            death_timer = 0.0f;
-                            ready_timer = READY_SECS;
-                            paused      = 0;
-                            pause_sel   = 0;
-                            state       = STATE_PLAYING;
-                            audio_resume();
-                        }
-                    } else {
-                        hiscore_save(HISCORE_PATH, hiscore);
-                        if (map_generate(1)) {
-                            level = 1;
-                            player_init(&player);
-                            ghosts_init_level(ghosts, level);
-                            fruit_init(&fruit, level);
-                            total_dots  = map_dots_remaining();
-                            you_win     = 0;
-                            game_over   = 0;
-                            death_timer = 0.0f;
-                            ready_timer = READY_SECS;
-                            paused      = 0;
-                            pause_sel   = 0;
-                            state       = STATE_TITLE;
-                            audio_resume();
-                        }
-                    }
-                }
-            } else {
-                game_update(&player, ghosts, &fruit, total_dots, dt,
-                            &death_timer, &ready_timer, &game_over, &you_win);
-            }
+            handle_playing_input(&ctx, dt);
         }
 
         BeginTextureMode(target);
@@ -252,19 +243,7 @@ int main(void) {
                     DrawText("Press R to restart",
                              GAME_W / 2 - 95, GAME_H / 2 + 30, 20, WHITE);
                 }
-                if (paused) {
-                    DrawRectangle(0, 0, GAME_W, GAME_H, (Color){0, 0, 0, 160});
-                    int tw = MeasureText("PAUSED", 36);
-                    DrawText("PAUSED", (GAME_W - tw) / 2, GAME_H / 2 - 80, 36, YELLOW);
-                    const char *items[] = {"RESUME", "RESTART", "QUIT TO TITLE"};
-                    for (int i = 0; i < 3; i++) {
-                        Color c = (i == pause_sel) ? YELLOW : WHITE;
-                        int iw = MeasureText(items[i], 24);
-                        DrawText(items[i], (GAME_W - iw) / 2, GAME_H / 2 - 20 + i * 36, 24, c);
-                    }
-                    DrawText("UP/DOWN: navigate   ENTER: select",
-                             GAME_W / 2 - 145, GAME_H / 2 + 100, 16, GRAY);
-                }
+                if (paused) draw_pause_overlay(pause_sel);
                 if (ready_timer > 0.0f && !you_win && !game_over) {
                     const char *num = TextFormat("%d", (int)ready_timer + 1);
                     int tw = MeasureText(num, 72);
