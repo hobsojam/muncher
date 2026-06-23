@@ -128,11 +128,12 @@ void player_check_extra_life(Player *p) {
     }
 }
 
-void player_draw(const Player *p, int offset_x, int offset_y) {
+void player_draw(const Player *p, int offset_x, int offset_y, float death_progress) {
     float t = p->move_t;
     float px = ((float)p->col + (float)p->dir_col * t) * TILE_SIZE + TILE_SIZE / 2.0f + offset_x;
     float py = ((float)p->row + (float)p->dir_row * t) * TILE_SIZE + TILE_SIZE / 2.0f + offset_y;
-    float radius = (float)TILE_SIZE / 2.0f - 1.0f;
+    float radius = ((float)TILE_SIZE / 2.0f - 1.0f) * (1.0f - death_progress);
+    if (radius <= 0.0f) return;
 
     float mouth_dir = 0.0f;
     if      (p->dir_col ==  1) mouth_dir =   0.0f;

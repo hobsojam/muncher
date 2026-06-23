@@ -97,6 +97,7 @@ int main(void) {
     float     death_timer = 0.0f;
     float     ready_timer = READY_SECS;
     int       paused      = 0;
+    int       pause_sel   = 0;
     GameState state       = STATE_TITLE;
 
     while (!WindowShouldClose()) {
@@ -124,7 +125,12 @@ int main(void) {
 
             if (!you_win && !game_over && IsKeyPressed(KEY_P)) {
                 paused = !paused;
-                if (paused) audio_pause(); else audio_resume();
+                if (paused) {
+                    audio_pause();
+                } else {
+                    pause_sel = 0;
+                    audio_resume();
+                }
             }
 
             if (you_win || game_over) {
@@ -158,7 +164,51 @@ int main(void) {
                         state       = was_win ? STATE_PLAYING : STATE_TITLE;
                     }
                 }
-            } else if (!paused) {
+            } else if (paused) {
+                if (IsKeyPressed(KEY_UP))   pause_sel = (pause_sel + 2) % 3;
+                if (IsKeyPressed(KEY_DOWN)) pause_sel = (pause_sel + 1) % 3;
+                if (IsKeyPressed(KEY_ENTER)) {
+                    if (pause_sel == 0) {
+                        paused = 0;
+                        pause_sel = 0;
+                        audio_resume();
+                    } else if (pause_sel == 1) {
+                        hiscore_save(HISCORE_PATH, hiscore);
+                        if (map_generate(1)) {
+                            level = 1;
+                            player_init(&player);
+                            ghosts_init_level(ghosts, level);
+                            fruit_init(&fruit);
+                            total_dots  = map_dots_remaining();
+                            you_win     = 0;
+                            game_over   = 0;
+                            death_timer = 0.0f;
+                            ready_timer = READY_SECS;
+                            paused      = 0;
+                            pause_sel   = 0;
+                            state       = STATE_PLAYING;
+                            audio_resume();
+                        }
+                    } else {
+                        hiscore_save(HISCORE_PATH, hiscore);
+                        if (map_generate(1)) {
+                            level = 1;
+                            player_init(&player);
+                            ghosts_init_level(ghosts, level);
+                            fruit_init(&fruit);
+                            total_dots  = map_dots_remaining();
+                            you_win     = 0;
+                            game_over   = 0;
+                            death_timer = 0.0f;
+                            ready_timer = READY_SECS;
+                            paused      = 0;
+                            pause_sel   = 0;
+                            state       = STATE_TITLE;
+                            audio_resume();
+                        }
+                    }
+                }
+            } else {
                 game_update(&player, ghosts, &fruit, total_dots, dt,
                             &death_timer, &ready_timer, &game_over, &you_win);
             }
@@ -180,8 +230,12 @@ int main(void) {
                 DrawText(TextFormat("LEVEL: %d",  level),        430, 4, 20, WHITE);
                 DrawText(TextFormat("BEST:  %d",  hiscore),      10, 32, 18, GRAY);
                 map_draw(0, MAP_OFFSET_Y);
-                if (!player.dead || (int)(death_timer * 6) % 2)
-                    player_draw(&player, 0, MAP_OFFSET_Y);
+                {
+                    float dp = player.dead ? (1.0f - death_timer / DEATH_FREEZE_SECS) : 0.0f;
+                    if (dp < 0.0f) dp = 0.0f;
+                    if (dp > 1.0f) dp = 1.0f;
+                    player_draw(&player, 0, MAP_OFFSET_Y, dp);
+                }
                 ghosts_draw(ghosts, 0, MAP_OFFSET_Y);
                 fruit_draw(&fruit, 0, MAP_OFFSET_Y);
                 if (you_win) {
@@ -199,9 +253,17 @@ int main(void) {
                              GAME_W / 2 - 95, GAME_H / 2 + 30, 20, WHITE);
                 }
                 if (paused) {
+                    DrawRectangle(0, 0, GAME_W, GAME_H, (Color){0, 0, 0, 160});
                     int tw = MeasureText("PAUSED", 36);
-                    DrawText("PAUSED",
-                             (GAME_W - tw) / 2, GAME_H / 2 - 18, 36, WHITE);
+                    DrawText("PAUSED", (GAME_W - tw) / 2, GAME_H / 2 - 80, 36, YELLOW);
+                    const char *items[] = {"RESUME", "RESTART", "QUIT TO TITLE"};
+                    for (int i = 0; i < 3; i++) {
+                        Color c = (i == pause_sel) ? YELLOW : WHITE;
+                        int iw = MeasureText(items[i], 24);
+                        DrawText(items[i], (GAME_W - iw) / 2, GAME_H / 2 - 20 + i * 36, 24, c);
+                    }
+                    DrawText("UP/DOWN: navigate   ENTER: select",
+                             GAME_W / 2 - 145, GAME_H / 2 + 100, 16, GRAY);
                 }
                 if (ready_timer > 0.0f && !you_win && !game_over) {
                     const char *num = TextFormat("%d", (int)ready_timer + 1);

@@ -24,7 +24,7 @@ typedef struct {
 void player_init(Player *p);
 void player_respawn(Player *p);
 void player_update(Player *p, float dt);
-void player_draw(const Player *p, int offset_x, int offset_y);
+void player_draw(const Player *p, int offset_x, int offset_y, float death_progress);
 void player_check_extra_life(Player *p);
 
 #endif
