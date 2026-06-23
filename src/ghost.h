@@ -41,6 +41,7 @@ typedef struct {
     int       flash_row;
     float     release_timer;
     int       eat_score;
+    float     exit_flash_timer;
     int       shy_radius;
 } Ghost;
 

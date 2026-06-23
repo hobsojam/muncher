@@ -231,23 +231,23 @@ void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level) {
     ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY, GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     -1, 0, 0.0f, g_speed_normal, 0,
-                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f, 0, 0 };
+                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f, 0, 0.0f, 0 };
 
     /* Pinky, Inky, Clyde start inside the house, released on a timer */
     ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f, 0, 0 };
+                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f, 0, 0.0f, 0 };
 
     ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, GHOST_HOUSE_MID_ROW,
                                     11, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f, 0, 0 };
+                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f, 0, 0.0f, 0 };
 
     ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, GHOST_HOUSE_MID_ROW,
                                     16, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f, 0, shy };
+                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f, 0, 0.0f, shy };
 }
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
@@ -286,11 +286,15 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
         }
     }
 
-    // Tick eat-flash timers
+    // Tick eat-flash timers and exit-flash timers
     for (int i = 0; i < GHOST_COUNT; i++) {
         if (ghosts[i].flash_timer > 0.0f) {
             ghosts[i].flash_timer -= dt;
             if (ghosts[i].flash_timer < 0.0f) ghosts[i].flash_timer = 0.0f;
+        }
+        if (ghosts[i].exit_flash_timer > 0.0f) {
+            ghosts[i].exit_flash_timer -= dt;
+            if (ghosts[i].exit_flash_timer < 0.0f) ghosts[i].exit_flash_timer = 0.0f;
         }
     }
 
@@ -330,6 +334,7 @@ void ghosts_update(Ghost ghosts[GHOST_COUNT], const Player *player, float dt) {
                 if (g->row == GHOST_HOUSE_EXIT_ROW) {
                     // Reached the corridor — join normal AI
                     g->col = ghost_wrap_col(g->col);
+                    g->exit_flash_timer = 0.4f;
                     g->mode    = global_mode;
                     g->dir_col = -1;
                     g->dir_row = 0;
@@ -361,8 +366,15 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
         float py = ((float)g->row + (float)g->dir_row * t) * TILE_SIZE + TILE_SIZE / 2.0f + offset_y;
         float r  = (float)TILE_SIZE / 2.0f - 1.0f;
 
-        int flash = g->mode == GMODE_FRIGHTENED && ghost_frighten_flashing(fright_timer);
-        Color body = (g->mode == GMODE_FRIGHTENED) ? (flash ? WHITE : BLUE) : g->color;
+        Color body;
+        if (g->mode == GMODE_FRIGHTENED) {
+            int flash = ghost_frighten_flashing(fright_timer);
+            body = flash ? WHITE : BLUE;
+        } else if (g->exit_flash_timer > 0.0f && (int)(g->exit_flash_timer * 10.0f) % 2 == 0) {
+            body = WHITE;
+        } else {
+            body = g->color;
+        }
 
         // Body: circle head + rectangular skirt
         DrawCircle((int)px, (int)(py - r * 0.25f), (int)r, body);
@@ -379,11 +391,14 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
             DrawCircle(ex2 + g->dir_col * 2, ey + g->dir_row * 2, 2, DARKBLUE);
         }
 
-        // Score popup when ghost is eaten
+        // Score popup when ghost is eaten — floats up and fades out
         if (g->flash_timer > 0.0f) {
-            int fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
-            int fy = (int)((float)g->flash_row * TILE_SIZE) + offset_y - 4;
-            DrawText(TextFormat("+%d", g->eat_score), fx, fy, 14, WHITE);
+            float progress  = 1.0f - (g->flash_timer / 0.8f);
+            int   fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
+            float fy = (float)g->flash_row * TILE_SIZE + offset_y - 4.0f
+                       - progress * (float)TILE_SIZE * 1.5f;
+            unsigned char alpha = (unsigned char)(255.0f * (1.0f - progress));
+            DrawText(TextFormat("+%d", g->eat_score), fx, (int)fy, 14, (Color){255, 255, 255, alpha});
         }
     }
 }
