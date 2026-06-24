@@ -187,6 +187,49 @@ static void test_player_draw_fully_dead_does_not_crash(void) {
     TEST_ASSERT(1);
 }
 
+/* Feature 1: mouth chomp animation — draw must not crash at move_t extremes */
+static void test_player_draw_chomp_closed_does_not_crash(void) {
+    map_init();
+    Player p;
+    player_init(&p);
+    p.move_t = 0.0f; /* tile boundary — sin=0, open_angle=0 → full circle */
+    player_draw(&p, 0, 0, 0.0f);
+    TEST_ASSERT(1);
+}
+
+static void test_player_draw_chomp_open_does_not_crash(void) {
+    map_init();
+    Player p;
+    player_init(&p);
+    p.move_t = 0.5f; /* mid-tile — sin=1, open_angle=30 → 60° gap */
+    player_draw(&p, 0, 0, 0.0f);
+    TEST_ASSERT(1);
+}
+
+/* Feature 2: player speed scales with level */
+static void test_player_set_level_speed_level1(void) {
+    Player p;
+    player_init(&p);
+    player_set_level_speed(&p, 1);
+    TEST_ASSERT(p.speed >= 7.99f && p.speed <= 8.01f);
+}
+
+static void test_player_set_level_speed_level10(void) {
+    Player p;
+    player_init(&p);
+    player_set_level_speed(&p, 10);
+    /* 8.0 + (10-1)*0.1 = 8.9 */
+    TEST_ASSERT(p.speed >= 8.89f && p.speed <= 8.91f);
+}
+
+static void test_player_set_level_speed_capped(void) {
+    Player p;
+    player_init(&p);
+    player_set_level_speed(&p, 99);
+    /* cap at 9.5f */
+    TEST_ASSERT(p.speed >= 9.49f && p.speed <= 9.51f);
+}
+
 int main(void) {
     RUN_TEST(test_wrap_col_normal);
     RUN_TEST(test_wrap_col_negative);
@@ -210,5 +253,10 @@ int main(void) {
     RUN_TEST(test_player_draw_alive_does_not_crash);
     RUN_TEST(test_player_draw_mid_shrink_does_not_crash);
     RUN_TEST(test_player_draw_fully_dead_does_not_crash);
+    RUN_TEST(test_player_draw_chomp_closed_does_not_crash);
+    RUN_TEST(test_player_draw_chomp_open_does_not_crash);
+    RUN_TEST(test_player_set_level_speed_level1);
+    RUN_TEST(test_player_set_level_speed_level10);
+    RUN_TEST(test_player_set_level_speed_capped);
     TESTS_SUMMARY();
 }

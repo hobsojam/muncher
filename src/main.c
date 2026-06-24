@@ -86,6 +86,7 @@ static void do_reset(GameCtx *c, int new_level, GameState new_state,
     if (!map_generate(new_level)) return;
     *c->level = new_level;
     if (respawn) player_respawn(c->player); else player_init(c->player);
+    player_set_level_speed(c->player, *c->level);
     ghosts_init_level(c->ghosts, *c->level);
     fruit_init(c->fruit, *c->level);
     *c->total_dots  = map_dots_remaining();
@@ -168,6 +169,7 @@ int main(void) {
 
     Player player;
     player_init(&player);
+    player_set_level_speed(&player, level);
 
     Ghost ghosts[GHOST_COUNT];
     ghosts_init_level(ghosts, level);

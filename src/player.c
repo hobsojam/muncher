@@ -3,6 +3,7 @@
 #include "map.h"
 #include "raylib.h"
 #include "audio.h"
+#include <math.h>
 
 #define PLAYER_START_COL        14
 #define PLAYER_START_ROW        29
@@ -141,12 +142,19 @@ void player_draw(const Player *p, int offset_x, int offset_y, float death_progre
     else if (p->dir_row ==  1) mouth_dir =  90.0f;
     else if (p->dir_row == -1) mouth_dir = 270.0f;
 
+    float open_angle = 30.0f * fabsf(sinf(p->move_t * 3.14159f));
     DrawCircleSector(
         (Vector2){px, py},
         radius,
-        mouth_dir + 30.0f,
-        mouth_dir + 330.0f,
+        mouth_dir + open_angle,
+        mouth_dir + 360.0f - open_angle,
         32,
         YELLOW
     );
+}
+
+void player_set_level_speed(Player *p, int level) {
+    float s = PLAYER_SPEED + (level - 1) * 0.1f;
+    if (s > 9.5f) s = 9.5f;
+    p->speed = s;
 }
