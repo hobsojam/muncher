@@ -29,6 +29,7 @@ typedef struct {
 } Fruit;
 
 void fruit_init(Fruit *f, int level);
+void fruit_deactivate(Fruit *f);
 void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float dt);
 void fruit_draw(const Fruit *f, int offset_x, int offset_y);
 
