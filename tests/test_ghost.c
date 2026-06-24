@@ -245,8 +245,7 @@ static void test_ghost_respawn_captures_position(void) {
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 15;
     ghost_respawn(&ghosts[GHOST_BLINKY]);
-    TEST_ASSERT_EQUAL_INT(7,  ghosts[GHOST_BLINKY].flash_col);
-    TEST_ASSERT_EQUAL_INT(15, ghosts[GHOST_BLINKY].flash_row);
+    TEST_ASSERT_EQUAL_INT(15 * MAP_COLS + 7, ghosts[GHOST_BLINKY].flash_tile);
 }
 
 /* ------------------------------------------------------------------ */
@@ -396,8 +395,7 @@ static void test_ghosts_draw_flash_popup(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].flash_timer = 0.5f;
-    ghosts[GHOST_BLINKY].flash_col   = 5;
-    ghosts[GHOST_BLINKY].flash_row   = 10;
+    ghosts[GHOST_BLINKY].flash_tile  = 10 * MAP_COLS + 5;
     ghosts_draw(ghosts, 0, 40);
     TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
 }
@@ -411,8 +409,7 @@ static void test_ghosts_draw_popup_early_progress_no_crash(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].flash_timer = 0.79f; /* progress ~0.0125 */
-    ghosts[GHOST_BLINKY].flash_col   = 5;
-    ghosts[GHOST_BLINKY].flash_row   = 10;
+    ghosts[GHOST_BLINKY].flash_tile  = 10 * MAP_COLS + 5;
     ghosts[GHOST_BLINKY].eat_score   = 200;
     ghosts_draw(ghosts, 0, 40);
     /* Must not crash; flash_timer must be unchanged by draw */
@@ -424,8 +421,7 @@ static void test_ghosts_draw_popup_late_progress_no_crash(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].flash_timer = 0.05f; /* progress ~0.9375 */
-    ghosts[GHOST_BLINKY].flash_col   = 7;
-    ghosts[GHOST_BLINKY].flash_row   = 12;
+    ghosts[GHOST_BLINKY].flash_tile  = 12 * MAP_COLS + 7;
     ghosts[GHOST_BLINKY].eat_score   = 400;
     ghosts_draw(ghosts, 10, 40);
     TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);

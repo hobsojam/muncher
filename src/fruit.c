@@ -78,7 +78,7 @@ void fruit_draw(const Fruit *f, int offset_x, int offset_y) {
     if (f->popup_timer > 0.0f) {
         float progress  = 1.0f - (f->popup_timer / 0.8f);
         int   fx = (int)((float)f->popup_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
-        float fy = (float)f->popup_row * TILE_SIZE + offset_y - 4.0f
+        float fy = (float)f->popup_row * (float)TILE_SIZE + (float)offset_y - 4.0f
                    - progress * (float)TILE_SIZE * 1.5f;
         unsigned char alpha = (unsigned char)(255.0f * (1.0f - progress));
         DrawText(TextFormat("+%d", f->score), fx, (int)fy, 14, (Color){255, 255, 255, alpha});

@@ -231,23 +231,23 @@ void ghosts_init_level(Ghost ghosts[GHOST_COUNT], int level) {
     ghosts[GHOST_BLINKY] = (Ghost){ GHOST_BLINKY, GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_EXIT_ROW,
                                     -1, 0, 0.0f, g_speed_normal, 0,
-                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0, 0.0f, 0, 0.0f, 0 };
+                                    GMODE_SCATTER, 25, 0, RED, 0, 0, 0.0f, 0, 0.0f, 0 };
 
     /* Pinky, Inky, Clyde start inside the house, released on a timer */
     ghosts[GHOST_PINKY]  = (Ghost){ GHOST_PINKY,  GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     GHOST_HOUSE_CENTER_COL, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 0, 3.0f, 0, 0.0f, 0 };
+                                    GMODE_HOUSE, 2, 0, PINK, 0, 0, 3.0f, 0, 0.0f, 0 };
 
     ghosts[GHOST_INKY]   = (Ghost){ GHOST_INKY,   11, GHOST_HOUSE_MID_ROW,
                                     11, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 0, 8.0f, 0, 0.0f, 0 };
+                                    GMODE_HOUSE, 27, 30, SKYBLUE, 0, 0, 8.0f, 0, 0.0f, 0 };
 
     ghosts[GHOST_CLYDE]  = (Ghost){ GHOST_CLYDE,  16, GHOST_HOUSE_MID_ROW,
                                     16, GHOST_HOUSE_MID_ROW,
                                     0, 1, 0.0f, g_speed_normal, 0,
-                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 0, 13.0f, 0, 0.0f, shy };
+                                    GMODE_HOUSE, 0, 30, ORANGE, 0, 0, 13.0f, 0, 0.0f, shy };
 }
 
 void ghosts_init(Ghost ghosts[GHOST_COUNT]) {
@@ -394,8 +394,10 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
         // Score popup when ghost is eaten — floats up and fades out
         if (g->flash_timer > 0.0f) {
             float progress  = 1.0f - (g->flash_timer / 0.8f);
-            int   fx = (int)((float)g->flash_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
-            float fy = (float)g->flash_row * TILE_SIZE + offset_y - 4.0f
+            int   flash_col = g->flash_tile % MAP_COLS;
+            int   flash_row = g->flash_tile / MAP_COLS;
+            int   fx = (int)((float)flash_col * (float)TILE_SIZE + (float)TILE_SIZE / 2.0f) + offset_x - 12;
+            float fy = (float)flash_row * (float)TILE_SIZE + (float)offset_y - 4.0f
                        - progress * (float)TILE_SIZE * 1.5f;
             unsigned char alpha = (unsigned char)(255.0f * (1.0f - progress));
             DrawText(TextFormat("+%d", g->eat_score), fx, (int)fy, 14, (Color){255, 255, 255, alpha});
@@ -404,8 +406,7 @@ void ghosts_draw(const Ghost ghosts[GHOST_COUNT], int offset_x, int offset_y) {
 }
 
 void ghost_respawn(Ghost *g) {
-    g->flash_col   = g->col;
-    g->flash_row   = g->row;
+    g->flash_tile  = g->row * MAP_COLS + g->col;
     g->flash_timer = 0.8f;
     audio_play_ghost_eat();
     g->col          = GHOST_HOUSE_CENTER_COL;
