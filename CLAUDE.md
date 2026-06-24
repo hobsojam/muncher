@@ -38,9 +38,22 @@ Verify new features manually with `./muncher.exe` after the test suite passes.
 ```text
 muncher/
   src/
-    main.c        # entry point, game loop, window setup
-    map.h/map.c   # tile grid, map data, rendering
-    player.h/.c   # player state, movement, input
+    main.c              # entry point, game loop, window setup
+    map.h/.c            # tile grid, procedural generation, rendering
+    map_internal.h      # internal map helpers (test-visible)
+    player.h/.c         # player state, movement, input, extra-life tracking
+    player_internal.h   # internal player helpers (test-visible)
+    ghost.h/.c          # ghost AI (scatter/chase/frightened/house/exiting modes)
+    ghost_internal.h    # internal ghost helpers and runtime state accessors
+    lives.h/.c          # life decrement, respawn sequencing, game-over flag
+    collision.h/.c      # ghost–player collision detection and scoring
+    fruit.h/.c          # level-based fruit spawn, collection, score popup
+    audio.h/.c          # music and sound-effect playback (raylib wrappers)
+    audio_internal.h    # internal audio helpers (test-visible)
+    hiscore.h/.c        # persistent high score (binary file on disk)
+  tests/
+    test_*.c            # unit tests; each binary is self-contained
+    stubs/raylib.h      # no-op raylib stubs for headless test builds
   Makefile
 ```
 

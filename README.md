@@ -30,7 +30,7 @@ A Pac-Man clone built in C with [raylib](https://www.raylib.com/).
 |------|--------|
 | Dot | 1 |
 | Power pellet | 10 |
-| Fruit bonus | 100 |
+| Fruit bonus | 100–2,000 (scales with level) |
 | 1st ghost (per frightened session) | 200 |
 | 2nd ghost | 400 |
 | 3rd ghost | 800 |
@@ -104,7 +104,7 @@ Each ghost has a distinct personality:
 - **Inky (cyan)** — uses Blinky's position to create a pincer attack
 - **Clyde (orange)** — chases when far away, retreats to his corner when close; his shy radius shrinks by one tile per level, making him progressively more aggressive
 
-Ghosts alternate between scatter mode (retreating to corners) and chase mode on a fixed timer. Eating a power pellet triggers frightened mode for 8 seconds.
+Ghosts alternate between scatter mode (retreating to corners) and chase mode on a fixed timer. Eating a power pellet triggers frightened mode (8 seconds at level 1, decreasing each level).
 
 ## CI
 
