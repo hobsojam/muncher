@@ -32,6 +32,12 @@ void fruit_init(Fruit *f, int level) {
     f->popup_row   = FRUIT_ROW;
 }
 
+void fruit_deactivate(Fruit *f) {
+    f->active = 0;
+    f->eaten  = 0;
+    f->timer  = 0.0f;
+}
+
 void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float dt) {
     if (!f->active && !f->eaten && total_dots > 0 && dots_remaining <= total_dots / 2) {
         f->active = 1;
