@@ -218,6 +218,22 @@ static void test_fruit_draw_popup_no_crash(void) {
     fruit_draw(&f, 0, 0);
 }
 
+/* Float+fade: popup at nearly-zero timer (late progress, nearly transparent) */
+static void test_fruit_draw_popup_late_progress_no_crash(void) {
+    Fruit f; fruit_init(&f, 1);
+    f.popup_timer = 0.04f; /* progress ~0.95 — nearly faded */
+    fruit_draw(&f, 10, 40);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
+/* Float+fade: popup at full timer (early progress, fully opaque, minimal drift) */
+static void test_fruit_draw_popup_early_progress_no_crash(void) {
+    Fruit f; fruit_init(&f, 3); /* peach: score=500 */
+    f.popup_timer = 0.79f; /* progress ~0.0125 */
+    fruit_draw(&f, 0, 0);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
 static void test_fruit_draw_inactive_no_crash(void) {
     Fruit f; fruit_init(&f, 1);
     fruit_draw(&f, 0, 0);
@@ -242,6 +258,9 @@ int main(void) {
     RUN_TEST(test_fruit_draw_inactive_no_crash);
     RUN_TEST(test_fruit_draw_active_no_crash);
     RUN_TEST(test_fruit_draw_popup_no_crash);
+    /* Feature 1 — fruit popup float+fade smoke tests */
+    RUN_TEST(test_fruit_draw_popup_late_progress_no_crash);
+    RUN_TEST(test_fruit_draw_popup_early_progress_no_crash);
     RUN_TEST(test_fruit_level1_cherry);
     RUN_TEST(test_fruit_level2_strawberry);
     RUN_TEST(test_fruit_level5_apple);

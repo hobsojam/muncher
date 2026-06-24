@@ -245,8 +245,7 @@ static void test_ghost_respawn_captures_position(void) {
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].col = 7; ghosts[GHOST_BLINKY].row = 15;
     ghost_respawn(&ghosts[GHOST_BLINKY]);
-    TEST_ASSERT_EQUAL_INT(7,  ghosts[GHOST_BLINKY].flash_col);
-    TEST_ASSERT_EQUAL_INT(15, ghosts[GHOST_BLINKY].flash_row);
+    TEST_ASSERT_EQUAL_INT(15 * MAP_COLS + 7, ghosts[GHOST_BLINKY].flash_tile);
 }
 
 /* ------------------------------------------------------------------ */
@@ -396,10 +395,106 @@ static void test_ghosts_draw_flash_popup(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
     ghosts[GHOST_BLINKY].flash_timer = 0.5f;
-    ghosts[GHOST_BLINKY].flash_col   = 5;
-    ghosts[GHOST_BLINKY].flash_row   = 10;
+    ghosts[GHOST_BLINKY].flash_tile  = 10 * MAP_COLS + 5;
     ghosts_draw(ghosts, 0, 40);
     TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
+/* ------------------------------------------------------------------ */
+/* Feature 1 — ghost popup float+fade draw (smoke tests)              */
+/* ------------------------------------------------------------------ */
+
+/* Popup at early progress (flash_timer near full — almost opaque) */
+static void test_ghosts_draw_popup_early_progress_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.79f; /* progress ~0.0125 */
+    ghosts[GHOST_BLINKY].flash_tile  = 10 * MAP_COLS + 5;
+    ghosts[GHOST_BLINKY].eat_score   = 200;
+    ghosts_draw(ghosts, 0, 40);
+    /* Must not crash; flash_timer must be unchanged by draw */
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
+/* Popup at late progress (flash_timer near zero — nearly transparent) */
+static void test_ghosts_draw_popup_late_progress_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].flash_timer = 0.05f; /* progress ~0.9375 */
+    ghosts[GHOST_BLINKY].flash_tile  = 12 * MAP_COLS + 7;
+    ghosts[GHOST_BLINKY].eat_score   = 400;
+    ghosts_draw(ghosts, 10, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].flash_timer > 0.0f);
+}
+
+/* ------------------------------------------------------------------ */
+/* Feature 2 — exit_flash_timer initialisation and trigger            */
+/* ------------------------------------------------------------------ */
+
+static void test_exit_flash_timer_zero_after_init(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    for (int i = 0; i < GHOST_COUNT; i++)
+        TEST_ASSERT(ghosts[i].exit_flash_timer == 0.0f);
+}
+
+/* Placing a ghost in GMODE_EXITING one row below the exit row, moving up,
+   should trigger the transition to normal AI and set exit_flash_timer.
+   GHOST_HOUSE_EXIT_ROW=11; start at row 12, dir_row=-1 so the ghost
+   steps to row 11 within the update call. */
+static void test_exit_flash_timer_ticks_down(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.4f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.1f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer < 0.4f);
+}
+
+static void test_exit_flash_timer_does_not_go_negative(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.05f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.5f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer >= 0.0f);
+}
+
+/* Draw with exit_flash_timer at even 100 ms period → WHITE branch */
+static void test_ghosts_draw_exit_flash_even_period_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    /* 0.4f: (int)(0.4*10)=4, 4%2=0 → WHITE */
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.4f;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer > 0.0f);
+}
+
+/* Draw with exit_flash_timer at odd 100 ms period → g->color branch */
+static void test_ghosts_draw_exit_flash_odd_period_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    /* 0.3f: (int)(0.3*10)=3, 3%2=1 → g->color */
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.3f;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer > 0.0f);
+}
+
+static void test_exit_flash_timer_set_on_exit_transition(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_PINKY].col     = GHOST_HOUSE_CENTER_COL;
+    ghosts[GHOST_PINKY].row     = GHOST_HOUSE_EXIT_ROW + 1; /* row 12 */
+    ghosts[GHOST_PINKY].dir_col = 0;
+    ghosts[GHOST_PINKY].dir_row = -1;
+    ghosts[GHOST_PINKY].mode    = GMODE_EXITING;
+    ghosts[GHOST_PINKY].move_t  = 0.99f; /* ensure the tile step fires immediately */
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.01f); /* small dt — one step suffices */
+    /* Ghost should have transitioned out of GMODE_EXITING */
+    TEST_ASSERT(ghosts[GHOST_PINKY].mode == GMODE_SCATTER ||
+                ghosts[GHOST_PINKY].mode == GMODE_CHASE);
+    TEST_ASSERT(ghosts[GHOST_PINKY].exit_flash_timer > 0.0f);
 }
 
 static void test_clyde_shy_radius_level1(void) {
@@ -714,5 +809,15 @@ int main(void) {
     RUN_TEST(test_difficulty_level5_scatter_duration_shorter);
     RUN_TEST(test_difficulty_chase_duration_unchanged);
     RUN_TEST(test_difficulty_respawn_uses_runtime_speed);
+    /* Feature 1 — popup float+fade draw smoke tests */
+    RUN_TEST(test_ghosts_draw_popup_early_progress_no_crash);
+    RUN_TEST(test_ghosts_draw_popup_late_progress_no_crash);
+    /* Feature 2 — exit flash timer */
+    RUN_TEST(test_exit_flash_timer_zero_after_init);
+    RUN_TEST(test_exit_flash_timer_ticks_down);
+    RUN_TEST(test_exit_flash_timer_does_not_go_negative);
+    RUN_TEST(test_ghosts_draw_exit_flash_even_period_no_crash);
+    RUN_TEST(test_ghosts_draw_exit_flash_odd_period_no_crash);
+    RUN_TEST(test_exit_flash_timer_set_on_exit_transition);
     TESTS_SUMMARY();
 }
