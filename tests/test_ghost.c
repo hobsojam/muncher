@@ -442,6 +442,44 @@ static void test_exit_flash_timer_zero_after_init(void) {
    should trigger the transition to normal AI and set exit_flash_timer.
    GHOST_HOUSE_EXIT_ROW=11; start at row 12, dir_row=-1 so the ghost
    steps to row 11 within the update call. */
+static void test_exit_flash_timer_ticks_down(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.4f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.1f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer < 0.4f);
+}
+
+static void test_exit_flash_timer_does_not_go_negative(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.05f;
+    Player player = {0}; player.col = 14; player.row = 29;
+    ghosts_update(ghosts, &player, 0.5f);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer >= 0.0f);
+}
+
+/* Draw with exit_flash_timer at even 100 ms period → WHITE branch */
+static void test_ghosts_draw_exit_flash_even_period_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    /* 0.4f: (int)(0.4*10)=4, 4%2=0 → WHITE */
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.4f;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer > 0.0f);
+}
+
+/* Draw with exit_flash_timer at odd 100 ms period → g->color branch */
+static void test_ghosts_draw_exit_flash_odd_period_no_crash(void) {
+    map_init();
+    Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
+    /* 0.3f: (int)(0.3*10)=3, 3%2=1 → g->color */
+    ghosts[GHOST_BLINKY].exit_flash_timer = 0.3f;
+    ghosts_draw(ghosts, 0, 40);
+    TEST_ASSERT(ghosts[GHOST_BLINKY].exit_flash_timer > 0.0f);
+}
+
 static void test_exit_flash_timer_set_on_exit_transition(void) {
     map_init();
     Ghost ghosts[GHOST_COUNT]; ghosts_init(ghosts);
@@ -776,6 +814,10 @@ int main(void) {
     RUN_TEST(test_ghosts_draw_popup_late_progress_no_crash);
     /* Feature 2 — exit flash timer */
     RUN_TEST(test_exit_flash_timer_zero_after_init);
+    RUN_TEST(test_exit_flash_timer_ticks_down);
+    RUN_TEST(test_exit_flash_timer_does_not_go_negative);
+    RUN_TEST(test_ghosts_draw_exit_flash_even_period_no_crash);
+    RUN_TEST(test_ghosts_draw_exit_flash_odd_period_no_crash);
     RUN_TEST(test_exit_flash_timer_set_on_exit_transition);
     TESTS_SUMMARY();
 }
