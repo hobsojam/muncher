@@ -32,6 +32,12 @@ void fruit_init(Fruit *f, int level) {
     f->popup_row   = FRUIT_ROW;
 }
 
+void fruit_deactivate(Fruit *f) {
+    f->active = 0;
+    f->eaten  = 0;
+    f->timer  = 0.0f;
+}
+
 void fruit_update(Fruit *f, Player *p, int dots_remaining, int total_dots, float dt) {
     if (!f->active && !f->eaten && total_dots > 0 && dots_remaining <= total_dots / 2) {
         f->active = 1;
@@ -76,8 +82,11 @@ void fruit_draw(const Fruit *f, int offset_x, int offset_y) {
         DrawCircle(px, py, TILE_SIZE / 2 - 2, c);
     }
     if (f->popup_timer > 0.0f) {
-        int fx = (int)((float)f->popup_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
-        int fy = (int)((float)f->popup_row * TILE_SIZE) + offset_y - 4;
-        DrawText(TextFormat("+%d", f->score), fx, fy, 14, WHITE);
+        float progress  = 1.0f - (f->popup_timer / 0.8f);
+        int   fx = (int)((float)f->popup_col * TILE_SIZE + TILE_SIZE / 2.0f) + offset_x - 12;
+        float fy = (float)f->popup_row * (float)TILE_SIZE + (float)offset_y - 4.0f
+                   - progress * (float)TILE_SIZE * 1.5f;
+        unsigned char alpha = (unsigned char)(255.0f * (1.0f - progress));
+        DrawText(TextFormat("+%d", f->score), fx, (int)fy, 14, (Color){255, 255, 255, alpha});
     }
 }

@@ -37,10 +37,10 @@ typedef struct {
     int       scatter_row;
     Color     color;
     float     flash_timer;
-    int       flash_col;
-    int       flash_row;
+    int       flash_tile;
     float     release_timer;
     int       eat_score;
+    float     exit_flash_timer;
     int       shy_radius;
 } Ghost;
 

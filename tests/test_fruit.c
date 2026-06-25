@@ -218,9 +218,61 @@ static void test_fruit_draw_popup_no_crash(void) {
     fruit_draw(&f, 0, 0);
 }
 
+/* Float+fade: popup at nearly-zero timer (late progress, nearly transparent) */
+static void test_fruit_draw_popup_late_progress_no_crash(void) {
+    Fruit f; fruit_init(&f, 1);
+    f.popup_timer = 0.04f; /* progress ~0.95 — nearly faded */
+    fruit_draw(&f, 10, 40);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
+/* Float+fade: popup at full timer (early progress, fully opaque, minimal drift) */
+static void test_fruit_draw_popup_early_progress_no_crash(void) {
+    Fruit f; fruit_init(&f, 3); /* peach: score=500 */
+    f.popup_timer = 0.79f; /* progress ~0.0125 */
+    fruit_draw(&f, 0, 0);
+    TEST_ASSERT(f.popup_timer > 0.0f);
+}
+
 static void test_fruit_draw_inactive_no_crash(void) {
     Fruit f; fruit_init(&f, 1);
     fruit_draw(&f, 0, 0);
+}
+
+/* ------------------------------------------------------------------ */
+/* fruit_deactivate — disappear on player death                        */
+/* ------------------------------------------------------------------ */
+
+static void test_fruit_deactivate_clears_active(void) {
+    Fruit f; fruit_init(&f, 1);
+    f.active = 1; f.timer = 5.0f;
+    fruit_deactivate(&f);
+    TEST_ASSERT_EQUAL_INT(0, f.active);
+}
+
+static void test_fruit_deactivate_clears_eaten(void) {
+    Fruit f; fruit_init(&f, 1);
+    f.eaten = 1;
+    fruit_deactivate(&f);
+    TEST_ASSERT_EQUAL_INT(0, f.eaten);
+}
+
+static void test_fruit_deactivate_clears_timer(void) {
+    Fruit f; fruit_init(&f, 1);
+    f.active = 1; f.timer = 5.0f;
+    fruit_deactivate(&f);
+    TEST_ASSERT(f.timer == 0.0f);
+}
+
+static void test_fruit_deactivate_allows_respawn_next_life(void) {
+    map_init();
+    Fruit f; fruit_init(&f, 1);
+    Player p; player_init(&p);
+    f.active = 1; f.timer = 5.0f;
+    fruit_deactivate(&f);
+    /* dot threshold still met — fruit should re-appear */
+    fruit_update(&f, &p, 50, 100, 0.0f);
+    TEST_ASSERT_EQUAL_INT(1, f.active);
 }
 
 int main(void) {
@@ -242,11 +294,19 @@ int main(void) {
     RUN_TEST(test_fruit_draw_inactive_no_crash);
     RUN_TEST(test_fruit_draw_active_no_crash);
     RUN_TEST(test_fruit_draw_popup_no_crash);
+    /* Feature 1 — fruit popup float+fade smoke tests */
+    RUN_TEST(test_fruit_draw_popup_late_progress_no_crash);
+    RUN_TEST(test_fruit_draw_popup_early_progress_no_crash);
     RUN_TEST(test_fruit_level1_cherry);
     RUN_TEST(test_fruit_level2_strawberry);
     RUN_TEST(test_fruit_level5_apple);
     RUN_TEST(test_fruit_level6_grapes);
     RUN_TEST(test_fruit_level99_grapes_clamped);
     RUN_TEST(test_fruit_level3_score_added_on_eat);
+    /* fruit_deactivate */
+    RUN_TEST(test_fruit_deactivate_clears_active);
+    RUN_TEST(test_fruit_deactivate_clears_eaten);
+    RUN_TEST(test_fruit_deactivate_clears_timer);
+    RUN_TEST(test_fruit_deactivate_allows_respawn_next_life);
     TESTS_SUMMARY();
 }
