@@ -65,12 +65,18 @@ int ghost_dist_sq(int c1, int r1, int c2, int r2) {
 // Does not allow reversing (classic Pac-Man rule).
 // Falls back to greedy distance-minimising heuristic if target unreachable.
 static void choose_dir(Ghost *g, int tc, int tr) {
-    typedef struct { int col, row, first_dc, first_dr; } BFSNode;
+    typedef struct {
+        int col;
+        int row;
+        int first_dc;
+        int first_dr;
+    } BFSNode;
     BFSNode queue[MAP_COLS * MAP_ROWS];
     int visited[MAP_ROWS][MAP_COLS];
     memset(visited, 0, sizeof(visited));
 
-    int head = 0, tail = 0;
+    int head = 0;
+    int tail = 0;
     int rev_dc = -g->dir_col;
     int rev_dr = -g->dir_row;
 
@@ -78,9 +84,11 @@ static void choose_dir(Ghost *g, int tc, int tr) {
 
     /* Seed BFS with valid non-reverse neighbours */
     for (int i = 0; i < 4; i++) {
-        int dc = DIRS[i][0], dr = DIRS[i][1];
+        int dc = DIRS[i][0];
+        int dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
-        int nc = ghost_wrap_col(g->col + dc), nr = g->row + dr;
+        int nc = ghost_wrap_col(g->col + dc);
+        int nr = g->row + dr;
         if (!ghost_can_enter(nc, nr) || visited[nr][nc]) continue;
         visited[nr][nc] = 1;
         queue[tail++] = (BFSNode){nc, nr, dc, dr};
@@ -94,8 +102,10 @@ static void choose_dir(Ghost *g, int tc, int tr) {
             return;
         }
         for (int i = 0; i < 4; i++) {
-            int dc = DIRS[i][0], dr = DIRS[i][1];
-            int nc = ghost_wrap_col(cur.col + dc), nr = cur.row + dr;
+            int dc = DIRS[i][0];
+            int dr = DIRS[i][1];
+            int nc = ghost_wrap_col(cur.col + dc);
+            int nr = cur.row + dr;
             if (!ghost_can_enter(nc, nr) || visited[nr][nc]) continue;
             visited[nr][nc] = 1;
             queue[tail++] = (BFSNode){nc, nr, cur.first_dc, cur.first_dr};
@@ -103,11 +113,15 @@ static void choose_dir(Ghost *g, int tc, int tr) {
     }
 
     /* Fallback: greedy distance-minimising (target unreachable via BFS) */
-    int best_dc = 0, best_dr = 0, best_d = -1;
+    int best_dc = 0;
+    int best_dr = 0;
+    int best_d = -1;
     for (int i = 0; i < 4; i++) {
-        int dc = DIRS[i][0], dr = DIRS[i][1];
+        int dc = DIRS[i][0];
+        int dr = DIRS[i][1];
         if (dc == rev_dc && dr == rev_dr) continue;
-        int nc = ghost_wrap_col(g->col + dc), nr = g->row + dr;
+        int nc = ghost_wrap_col(g->col + dc);
+        int nr = g->row + dr;
         if (!ghost_can_enter(nc, nr)) continue;
         int d = ghost_dist_sq(nc, nr, tc, tr);
         if (best_d < 0 || d < best_d) { best_d = d; best_dc = dc; best_dr = dr; }
