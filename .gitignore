@@ -2,6 +2,9 @@
 muncher.exe
 libraylib.dll
 
+# Runtime save data
+muncher_hiscore.dat
+
 # Generated import library files
 libraylib.a
 libraylib.def
