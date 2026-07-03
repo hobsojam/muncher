@@ -21,6 +21,9 @@ void hiscore_save(const char *path, int score) {
     if (score == 0) return;
     FILE *f = fopen(path, "wb");
     if (!f) return;
+    /* Taint analysis flags this flow (save file -> fread -> fwrite). Accepted:
+       the tainted value is the data being written, not a size/path/format, and
+       it is clamped to [0, HISCORE_MAX] at the trust boundary in hiscore_load. */
     fwrite(&score, sizeof(int), 1, f);
     fclose(f);
 }
