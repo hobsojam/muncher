@@ -2,6 +2,8 @@
 
 A Pac-Man clone built in C with [raylib](https://www.raylib.com/).
 
+Muncher is an original fan-made game inspired by classic maze-chase arcade games; not affiliated with or endorsed by Bandai Namco.
+
 ## Gameplay
 
 - Eat all dots to clear the maze; levels are procedurally generated
